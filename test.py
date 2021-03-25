@@ -54,15 +54,15 @@ def main():
 if __name__ == "__main__":
     #import cProfile
     #cProfile.run('main()')
-    ##import cProfile, pstats
-    ##profiler = cProfile.Profile()
-    ##profiler.enable()
+    import cProfile, pstats
+    profiler = cProfile.Profile()
+    profiler.enable()
     main()
-    ##profiler.disable()
+    profiler.disable()
     #stats = pstats.Stats(profiler).sort_stats('ncalls')
-    ##stats = pstats.Stats(profiler).sort_stats('tottime')
+    stats = pstats.Stats(profiler).sort_stats('tottime')
     #stats = pstats.Stats(profiler)
-    ##stats.print_stats()
+    stats.print_stats()
     #stats = pstats.Stats(profiler)
     #stats.dump_stats('stats_file.dat')
     #start = time.perf_counter()

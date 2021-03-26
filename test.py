@@ -1,6 +1,6 @@
 import time
 
-from src.intpy import deterministic
+from intpy.intpy import deterministic
 
 
 # class Test:
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     #stats = pstats.Stats(profiler)
     stats.print_stats()
     #stats = pstats.Stats(profiler)
-    ##stats.dump_stats('stats_file_det.dat5')
+    ##stats.dump_stats('output/stats_file_det.dat5')
     #start = time.perf_counter()
     #print(fib(5))
     #print(time.perf_counter()-start,"s")

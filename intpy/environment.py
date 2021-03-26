@@ -2,7 +2,7 @@ import os
 import ctypes
 import sqlite3
 
-from src.logger.log import debug
+from intpy.logger.log import debug
 
 FOLDER_NAME = ".intpy"
 CACHE_FOLDER_NAME = FOLDER_NAME + "/cache"

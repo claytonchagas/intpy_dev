@@ -3,37 +3,37 @@ import time
 from src.intpy import deterministic
 
 
-class Test:
-    @deterministic
-    def func(self, data):
-        a = 1 + 1
-        time.sleep(2)
-        return [data]
+# class Test:
+#     @deterministic
+#     def func(self, data):
+#         a = 1 + 1
+#         time.sleep(2)
+#         return [data]
 
-    @deterministic
-    def func2(self):
-        return 1234
-
-
-@deterministic
-def quicksort(list):
-    if len(list) <= 1:
-        return list
-
-    pivot = list[0]
-    equal = [x for x in list if x == pivot]
-    greater = [x for x in list if x > pivot]
-    lesser = [x for x in list if x < pivot]
-
-    return quicksort(lesser) + equal + quicksort(greater)
+#     @deterministic
+#     def func2(self):
+#         return 1234
 
 
-@deterministic
-def pow(n, x):
-    if x == 0:
-        return 1
+# @deterministic
+# def quicksort(list):
+#     if len(list) <= 1:
+#         return list
 
-    return n*pow(n, x-1)
+#     pivot = list[0]
+#     equal = [x for x in list if x == pivot]
+#     greater = [x for x in list if x > pivot]
+#     lesser = [x for x in list if x < pivot]
+
+#     return quicksort(lesser) + equal + quicksort(greater)
+
+
+# @deterministic
+# def pow(n, x):
+#     if x == 0:
+#         return 1
+
+#     return n*pow(n, x-1)
 
 
 @deterministic
@@ -52,8 +52,8 @@ def main():
 
 
 if __name__ == "__main__":
-    #import cProfile
-    #cProfile.run('main()')
+    ###import cProfile
+    ###cProfile.run('main()')
     import cProfile, pstats
     profiler = cProfile.Profile()
     profiler.enable()
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     #stats = pstats.Stats(profiler)
     stats.print_stats()
     #stats = pstats.Stats(profiler)
-    #stats.dump_stats('stats_file.dat')
+    ##stats.dump_stats('stats_file_det.dat5')
     #start = time.perf_counter()
     #print(fib(5))
     #print(time.perf_counter()-start,"s")

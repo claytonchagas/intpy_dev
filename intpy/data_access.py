@@ -6,6 +6,8 @@ from .logger.log import debug, error, warn
 
 from . import CONEXAO_BANCO
 
+DICIO_NOVOS_DADOS = {}
+
 def _save(file_name):
     CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT INTO CACHE(cache_file) VALUES ('{0}')".format(file_name))
 
@@ -28,6 +30,12 @@ def _get_id(fun_name, fun_args, fun_source):
 
 def get_cache_data(fun_name, fun_args, fun_source):
     id = _get_id(fun_name, fun_args, fun_source)
+    
+    #Verificando se há dados salvos em "DICIO_NOVOS_DADOS"
+    if(id in DICIO_NOVOS_DADOS):
+        return DICIO_NOVOS_DADOS[id]
+    
+    #Verificando se há dados salvos no banco
     list_file_name = _get(_get_file_name(id))
     file_name = None
     if(len(list_file_name) == 1):
@@ -55,17 +63,19 @@ def autofix(id):
 
 def create_entry(fun_name, fun_args, fun_return, fun_source):
     id = _get_id(fun_name, fun_args, fun_source)
+    DICIO_NOVOS_DADOS[id] = fun_return
 
+def salvarNovosDadosBanco():
     def serialize(return_value, file_name):
         with open(".intpy/cache/{0}".format(_get_file_name(file_name)), 'wb') as file:
             return pickle.dump(return_value, file, protocol=pickle.HIGHEST_PROTOCOL)
+    
+    for id in DICIO_NOVOS_DADOS:
+        debug("serializing return value from {0}".format(id))
+        serialize(DICIO_NOVOS_DADOS[id], id)
 
-    debug("serializing return value from {0}".format(fun_name))
-    serialize(fun_return, id)
+        debug("inserting reference in database")
+        _save(_get_file_name(id))
 
-    debug("inserting reference in database")
-    _save(_get_file_name(id))
-
-def salvarNovosDadosBanco():
     CONEXAO_BANCO.salvarAlteracoes()
     CONEXAO_BANCO.fecharConexao()

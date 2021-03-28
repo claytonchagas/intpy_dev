@@ -1,6 +1,6 @@
 import os
 import ctypes
-import sqlite3
+from .banco import Banco
 
 from intpy.logger.log import debug
 
@@ -28,18 +28,16 @@ def _create_folder():
     #ctypes.windll.kernel32.SetFileAttributesW(FOLDER_NAME, HIDDEN)
 
 
-def init_env(f):
+def init_env():
     debug("cheking if intpy environment exists")
     if _env_exists():
         debug("environment already exists")
-        return f
 
     debug("creating intpy environment")
     _create_folder()
     _create_cache_folder()
     _create_database()
 
-    return f
 
 
 def _create_database():
@@ -53,16 +51,16 @@ def _create_database():
 
 def _create_table():
     debug("creating table")
-    conn = sqlite3.connect('.intpy/intpy.db')
+    conexaoBanco = Banco('.intpy/intpy.db')
 
     stmt = "CREATE TABLE IF NOT EXISTS CACHE (\
     id INTEGER PRIMARY KEY AUTOINCREMENT,\
     cache_file TEXT UNIQUE\
     );"
 
-    conn.execute(stmt)
+    conexaoBanco.executarComandoSQLSemRetorno(stmt)
 
-    conn.close()
+    conexaoBanco.fecharConexao()
 
 
 def _db_exists():

@@ -4,20 +4,20 @@ import hashlib
 
 from .logger.log import debug, error, warn
 
-from . import CONEXAO_BANCO
+from . import CONSTANTES
 
 DICIO_NOVOS_DADOS = {}
 
 def _save(file_name):
-    CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT INTO CACHE(cache_file) VALUES ('{0}')".format(file_name))
+    CONSTANTES.CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT INTO CACHE(cache_file) VALUES ('{0}')".format(file_name))
 
 
 def _get(id):
-    return CONEXAO_BANCO.executarComandoSQLSelect("SELECT cache_file FROM CACHE WHERE cache_file = '{0}'".format(id))
+    return CONSTANTES.CONEXAO_BANCO.executarComandoSQLSelect("SELECT cache_file FROM CACHE WHERE cache_file = '{0}'".format(id))
 
 
 def _remove(id):
-    CONEXAO_BANCO.executarComandoSQLSemRetorno("DELETE FROM CACHE WHERE cache_file = '{0}';".format(id))
+    CONSTANTES.CONEXAO_BANCO.executarComandoSQLSemRetorno("DELETE FROM CACHE WHERE cache_file = '{0}';".format(id))
 
 
 def _get_file_name(id):
@@ -30,7 +30,9 @@ def _get_id(fun_name, fun_args, fun_source):
 
 def get_cache_data(fun_name, fun_args, fun_source):
     id = _get_id(fun_name, fun_args, fun_source)
-    
+    return get_cache_data_by_id(id)
+
+def get_cache_data_by_id(id):
     #Verificando se há dados salvos em "DICIO_NOVOS_DADOS"
     if(id in DICIO_NOVOS_DADOS):
         return DICIO_NOVOS_DADOS[id]
@@ -70,12 +72,19 @@ def salvarNovosDadosBanco():
         with open(".intpy/cache/{0}".format(_get_file_name(file_name)), 'wb') as file:
             return pickle.dump(return_value, file, protocol=pickle.HIGHEST_PROTOCOL)
     
-    for id in DICIO_NOVOS_DADOS:
+    for i in range(len(DICIO_NOVOS_DADOS)):
+        id =  list(DICIO_NOVOS_DADOS.keys())[0]
+        returnValue = DICIO_NOVOS_DADOS[id]
+
+        DICIO_NOVOS_DADOS.pop(id)
+        if(get_cache_data_by_id(id)):
+            continue
+        
         debug("serializing return value from {0}".format(id))
-        serialize(DICIO_NOVOS_DADOS[id], id)
+        serialize(returnValue, id)
 
         debug("inserting reference in database")
         _save(_get_file_name(id))
 
-    CONEXAO_BANCO.salvarAlteracoes()
-    CONEXAO_BANCO.fecharConexao()
+    CONSTANTES.CONEXAO_BANCO.salvarAlteracoes()
+    CONSTANTES.CONEXAO_BANCO.fecharConexao()

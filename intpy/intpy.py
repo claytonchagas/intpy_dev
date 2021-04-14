@@ -22,6 +22,7 @@ def _get_cache(func, args, functionReturnList):
         debug("cache hit for {0}({1})".format(func.__name__, args))
         functionReturnList.append(c)
 
+    CONSTANTES.CONEXAO_BANCO.fecharConexao()
     print("CONSULTA AO BANCO {0}({1}) CONCLUÍDA!".format(func.__name__, *args))
 
 def _cache_exists(cache):
@@ -41,6 +42,16 @@ def _execute_func(f, functionReturnList, method_args, method_kwargs, self=None,)
     
     start = time.perf_counter()
     result_value = f(self, *method_args, **method_kwargs) if self is not None else f(*method_args, **method_kwargs)
+    """
+    functionCode = inspect.getsource(f)
+    startExecution = False
+    for codeLine in functionCode:
+        if(startExecution):
+            exec()
+        if(codeLine.startswith("def ")):
+            startExecution = True
+
+    """
     end = time.perf_counter()
 
     elapsed_time = end - start

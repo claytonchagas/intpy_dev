@@ -13,25 +13,27 @@ Criação da função "salvarCache()" no arquivo "intpy.py" que deve ser chamada
 ==============================================================
 Implementação de Threads com a biblioteca threading:
 
-CONEXÃO COM BANCO É THREAD-LOCAL
+i)Conexão com o banco de dados
+    A conexão com o banco de dados passou a ser thread local. Assim, sempre que uma consulta ao banco necessita ser feita é necessário abrir uma nova conexão com o banco de dados.
 
-CRIEI UMA CONEXÃO SEMPRE QUE UMA THREAD DE CONSULTA AO BANCO É ATIVADA
+    Talvez não valha a pena continuar abrindo uma conexão no início do programa pois ela só será utilizada na inserção dos dados ao fim da execução e estávamos pensando em fazer essa etapa em outro processo
 
-NÃO SEI SE VALE A PENA CONTINUAR ABRINDO A CONEXÃO COM O BANCO NO INÍCIO DO PROGRAMA POIS ELA SÓ SERÁ UTILIZADA NA INSERÇÃO DOS DADOS AO FIM DA EXECUÇÃO (QUERIAMOS FAZER ISSO EM OUTRO PROCESSO)
+ii)Execução das Threads
+    Sempre que a função do usuário termina sua execução antes que a consulta ao banco seja concluída, o retorno da função é adicionado ao dicionário DICIO_NOVOS_DADOS
 
+    Consequentemente, na hora de inserir os dados no banco é necessário verificar antes da inserção se os dados estão ou não no cache. Essa abordagem possui duas vantagens e uma desvantagem.
+    
+    Vantagem: Ganhamos velocidade na execução do script pois antes que o select termine de executar continuamos a execução do script do usuário.
 
-FIZ COM QUE SEMPRE QUE A FUNÇÃO SEJA PROCESSADA ANTES DO BANCO ASSUMA QUE HOUVE CACHE MISS
+    Como o dado será adicionado ao dicionário e, quando a busca no banco é feita, antes de executar o select no banco é verificado se o valor se encontra no dicionário, recuperar esse dado no futuro será mais rápido pois não será necessário acessar o banco
 
-NA HORA DA INSERÇÃO DOS DADOS VERIFICAMOS SE HOUVE DE FATO O DADO ESTÁ OU NÃO NO CACHE
+    Desvantagem: No momento da inserção de novos dados ao banco, será necessário verificar se o dado já está no cache o que aumentará o tempo de execução dessa etapa. Entretanto como pensamos em executar essa etapa em outro processo esse tempo adicional talvez seja tolerável
 
-PRÓ: GANHA VELOCIDADE NA EXECUÇÃO DO SCRIPT (NÃO ESPERAMOS O SELECT DO BANCO TERMINAR)
+iii)Término das threads
+    As threads iniciadas durante a execução do decorador deterministic ainda não são destruídas. Isso significa que tanto a consulta ao banco como a execução da função do usuário são executadas até o final.
 
-COM O NOVO VALOR NO DICIONÁRIO ELE SERÁ VERIFICADO ANTES DE PESQUISAR NO BANCO NOVAMENTE
-CONTRA: NA HORA DE INSERÇÃO HÁ NECESSIDADE DE VERIFICAR SE OS VALORES ESTÃO NO CACHE SENÃO OCORRE RUPTURA DA CONSTRAINT UNIQUE
+iv)Mensagens de DEBUG
+    O código ainda possui mensagens de DEBUG
 
-MAS SE A EXECUÇÃO OCORRER EM UM PROCESSO A PARTE O TEMPO ADICIONAL PODE SER TOLERÁVEL, TALVEZ
-
-
-IMPLEMENTAÇÃO PARA FUNÇÕES E MÉTODOS CONCLUÍDA
-SEM DESTRUIR THREADS
-AINDA COM MENSAGENS DE DEBUG
+v)Mensagens 
+    Há várias mensagens que o intpy utilizava como DEBUG que talvez tenham perdido o seu sentido e devessem ser removidas

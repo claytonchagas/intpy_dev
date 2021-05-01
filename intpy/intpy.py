@@ -5,14 +5,14 @@ import time
 from .data_access import get_cache_data, create_entry, salvarNovosDadosBanco
 from .logger.log import debug
 
-import threading
+import multiprocessing
 from . import CONSTANTES
 from .banco import Banco
 import os
-def _get_cache(func, args, functionReturnList):
-    print("CONSULTANDO O BANCO {0}({1})...".format(func.__name__, *args))
+def _get_cache(func, args, queue):
+    print("CONSULTANDO O BANCO {0}({1})...".format(func.__name__, args))
 
-    #Opening connection with database for current running thread
+    #Opening connection with database for current running process
     CONSTANTES.CONEXAO_BANCO = Banco(os.path.join(".intpy", "intpy.db"))
 
     c = get_cache_data(func.__name__, args, inspect.getsource(func))
@@ -20,10 +20,10 @@ def _get_cache(func, args, functionReturnList):
         debug("cache miss for {0}({1})".format(func.__name__, args))
     else:
         debug("cache hit for {0}({1})".format(func.__name__, args))
-        functionReturnList.append(c)
+        queue.put(c)
 
     CONSTANTES.CONEXAO_BANCO.fecharConexao()
-    print("CONSULTA AO BANCO {0}({1}) CONCLUÍDA!".format(func.__name__, *args))
+    print("CONSULTA AO BANCO {0}({1}) CONCLUÍDA!".format(func.__name__, args))
 
 def _cache_exists(cache):
     return cache is not None
@@ -37,8 +37,8 @@ def _cache_data(func, fun_args, fun_return, elapsed_time):
     debug("caching {0} took {1}".format(func.__name__, end - start))
 
 
-def _execute_func(f, functionReturnList, method_args, method_kwargs, self=None,):
-    print("EXECUTANDO A FUNÇÃO {0}({1})...".format(f.__name__, *method_args))
+def _execute_func(f, queue, method_args, method_kwargs, self=None,):
+    print("EXECUTANDO A FUNÇÃO {0}({1})...".format(f.__name__, method_args))
     
     start = time.perf_counter()
     result_value = f(self, *method_args, **method_kwargs) if self is not None else f(*method_args, **method_kwargs)
@@ -58,9 +58,9 @@ def _execute_func(f, functionReturnList, method_args, method_kwargs, self=None,)
 
     debug("{0} took {1} to run".format(f.__name__, elapsed_time))
 
-    print("EXECUÇÃO FUNÇÃO {0}({1}) CONCLUÍDA!".format(f.__name__, *method_args))
+    queue.put((result_value, elapsed_time))
 
-    functionReturnList.append((result_value, elapsed_time))
+    print("EXECUÇÃO FUNÇÃO {0}({1}) CONCLUÍDA!".format(f.__name__, method_args))
 
 
 """
@@ -105,25 +105,26 @@ def _method_call(f):
     def wrapper(self, *method_args, **method_kwargs):
         debug("calling {0}".format(f.__name__))
         
-        functionReturnList = []
-        cacheSearchThread = threading.Thread(target=_get_cache, args=tuple([f, method_args, functionReturnList]))
-        cacheSearchThread.start()
-        methodExecutionThread = threading.Thread(target=_execute_func, args=tuple([f, functionReturnList, method_args, method_kwargs, self]))
-        methodExecutionThread.start()
+        queue = multiprocessing.Queue()
+        cacheSearchProcess = multiprocessing.Process(target=_get_cache, args=tuple([f, method_args, queue]))
+        cacheSearchProcess.start()
+        methodExecutionProcess = multiprocessing.Process(target=_execute_func, args=tuple([f, queue, method_args, method_kwargs, self]))
+        methodExecutionProcess.start()
 
-        print("inspect.getsource(f):", inspect.getsource(f))
-
-        while True:
-            if(len(functionReturnList) > 0):
-                break
+        processReturn = queue.get()
         
-        print("functionReturnList:", functionReturnList)
+        print("processReturn:", processReturn)
 
-        if(isinstance(functionReturnList[0], tuple)):
-            _cache_data(f, method_args, functionReturnList[0][0], inspect.getsource(f))
-            return functionReturnList[0][0]
+        if(isinstance(processReturn, tuple)):
+            _cache_data(f, method_args, processReturn[0], inspect.getsource(f))
+            return processReturn[0]
+        else:
+            #In this case, the cacheSearchProcess executed faster than the methodExecutionProcess
+            #Stopping methodExecutionProcess
+            print("APAGANDO PROCESSO DA FUNÇÃO {0}({1})...".format(f.__name__, method_args))
+            methodExecutionProcess.terminate()
         
-        return functionReturnList[0]
+        return processReturn
 
     return wrapper
 
@@ -133,25 +134,26 @@ def _function_call(f):
     def wrapper(*method_args, **method_kwargs):
         debug("calling {0}".format(f.__name__))
 
-        functionReturnList = []
-        cacheSearchThread = threading.Thread(target=_get_cache, args=tuple([f, method_args, functionReturnList]))
-        cacheSearchThread.start()
-        functionExecutionThread = threading.Thread(target=_execute_func, args=tuple([f, functionReturnList, method_args, method_kwargs]))
-        functionExecutionThread.start()
+        queue = multiprocessing.Queue()
+        cacheSearchProcess = multiprocessing.Process(target=_get_cache, args=tuple([f, method_args, queue]))
+        cacheSearchProcess.start()
+        functionExecutionProcess = multiprocessing.Process(target=_execute_func, args=tuple([f, queue, method_args, method_kwargs]))
+        functionExecutionProcess.start()
 
-        #print("inspect.getsource(f):", inspect.getsource(f))
-
-        while True:
-            if(len(functionReturnList) > 0):
-                break
+        processReturn = queue.get()
         
-        print("functionReturnList:", functionReturnList)
+        print("processReturn:", processReturn)
 
-        if(isinstance(functionReturnList[0], tuple)):
-            _cache_data(f, method_args, functionReturnList[0][0], inspect.getsource(f))
-            return functionReturnList[0][0]
+        if(isinstance(processReturn, tuple)):
+            _cache_data(f, method_args, processReturn[0], inspect.getsource(f))
+            return processReturn[0]
+        else:
+            #In this case, the cacheSearchProcess executed faster than the functionExecutionProcess
+            #Stopping functionExecutionProcess
+            print("APAGANDO PROCESSO DA FUNÇÃO {0}({1})...".format(f.__name__, method_args))
+            functionExecutionProcess.terminate()
         
-        return functionReturnList[0]
+        return processReturn
 
     return wrapper
 

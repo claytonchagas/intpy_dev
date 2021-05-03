@@ -45,24 +45,27 @@ def fib(n):
     return fib(n-1) + fib(n-2)
 
 
-def main():
-    start = time.perf_counter()
-    print(fib(37))
-    print(time.perf_counter()-start,"s")
+# def main():
+#     start = time.perf_counter()
+#     print(fib(37))
+#     print(time.perf_counter()-start,"s")
 
 
 if __name__ == "__main__":
+    start = time.perf_counter()
+    print(fib(200))
+    print(time.perf_counter()-start,"s")
     ###import cProfile
     ###cProfile.run('main()')
-    import cProfile, pstats
-    profiler = cProfile.Profile()
-    profiler.enable()
-    main()
-    profiler.disable()
+    ####import cProfile, pstats
+    ####profiler = cProfile.Profile()
+    ####profiler.enable()
+    ####main()
+    ####profiler.disable()
     #stats = pstats.Stats(profiler).sort_stats('ncalls')
-    stats = pstats.Stats(profiler).sort_stats('tottime')
+    ####stats = pstats.Stats(profiler).sort_stats('tottime')
     #stats = pstats.Stats(profiler)
-    stats.print_stats()
+    ####stats.print_stats()
     #stats = pstats.Stats(profiler)
     ##stats.dump_stats('output/stats_file_det.dat5')
     #start = time.perf_counter()

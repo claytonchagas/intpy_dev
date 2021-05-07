@@ -15,7 +15,7 @@ def _log(mode, message):
 def debug(message):
     if debug_enabled == 'True':
         _log("DEBUG", message)
-
+    # _log("DEBUG", message)
 
 def error(message):
     _log("ERROR", message)

@@ -13,5 +13,5 @@ def fib(n):
 
 if __name__ == "__main__":
     start = time.perf_counter()
-    print(fib(200))
+    print(fib(30))
     print(time.perf_counter()-start,"s")

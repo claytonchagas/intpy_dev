@@ -1,9 +1,9 @@
 import os
-from .banco import Banco
+from .db import DB
 from .environment import init_env
 import threading
 
 init_env()
 
-CONSTANTES = threading.local()
-CONSTANTES.CONEXAO_BANCO = Banco(os.path.join(".intpy", "intpy.db"))
+CONSTANTS = threading.local()
+CONSTANTS.CONN_DB = DB(os.path.join(".intpy", "intpy.db"))

@@ -4,20 +4,20 @@ import hashlib
 
 from .logger.log import debug, error, warn
 
-from . import CONSTANTES
+from . import CONSTANTS
 
-DICIO_NOVOS_DADOS = {}
+DICT_NEW_DATA = {}
 
 def _save(file_name):
-    CONSTANTES.CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT INTO CACHE(cache_file) VALUES ('{0}')".format(file_name))
+    CONSTANTS.CONN_DB.executeCmdSQLNoReturn("INSERT INTO CACHE(cache_file) VALUES ('{0}')".format(file_name))
 
 
 def _get(id):
-    return CONSTANTES.CONEXAO_BANCO.executarComandoSQLSelect("SELECT cache_file FROM CACHE WHERE cache_file = '{0}'".format(id))
+    return CONSTANTS.CONN_DB.executeCmdSQLSelect("SELECT cache_file FROM CACHE WHERE cache_file = '{0}'".format(id))
 
 
 def _remove(id):
-    CONSTANTES.CONEXAO_BANCO.executarComandoSQLSemRetorno("DELETE FROM CACHE WHERE cache_file = '{0}';".format(id))
+    CONSTANTS.CONN_DB.executeCmdSQLNoReturn("DELETE FROM CACHE WHERE cache_file = '{0}';".format(id))
 
 
 def _get_file_name(id):
@@ -33,9 +33,9 @@ def get_cache_data(fun_name, fun_args, fun_source):
     return get_cache_data_by_id(id)
 
 def get_cache_data_by_id(id):
-    #Verificando se há dados salvos em "DICIO_NOVOS_DADOS"
-    if(id in DICIO_NOVOS_DADOS):
-        return DICIO_NOVOS_DADOS[id]
+    #Verificando se há dados salvos em "DICT_NEW_DATA"
+    if(id in DICT_NEW_DATA):
+        return DICT_NEW_DATA[id]
     
     #Verificando se há dados salvos no banco
     list_file_name = _get(_get_file_name(id))
@@ -65,18 +65,18 @@ def autofix(id):
 
 def create_entry(fun_name, fun_args, fun_return, fun_source):
     id = _get_id(fun_name, fun_args, fun_source)
-    DICIO_NOVOS_DADOS[id] = fun_return
+    DICT_NEW_DATA[id] = fun_return
 
-def salvarNovosDadosBanco():
+def saveNewDataDB():
     def serialize(return_value, file_name):
         with open(".intpy/cache/{0}".format(_get_file_name(file_name)), 'wb') as file:
             return pickle.dump(return_value, file, protocol=pickle.HIGHEST_PROTOCOL)
     
-    for i in range(len(DICIO_NOVOS_DADOS)):
-        id =  list(DICIO_NOVOS_DADOS.keys())[0]
-        returnValue = DICIO_NOVOS_DADOS[id]
+    for i in range(len(DICT_NEW_DATA)):
+        id =  list(DICT_NEW_DATA.keys())[0]
+        returnValue = DICT_NEW_DATA[id]
 
-        DICIO_NOVOS_DADOS.pop(id)
+        DICT_NEW_DATA.pop(id)
         if(get_cache_data_by_id(id)):
             continue
         
@@ -86,5 +86,5 @@ def salvarNovosDadosBanco():
         debug("inserting reference in database")
         _save(_get_file_name(id))
 
-    CONSTANTES.CONEXAO_BANCO.salvarAlteracoes()
-    CONSTANTES.CONEXAO_BANCO.fecharConexao()
+    CONSTANTS.CONN_DB.salvarAlteracoes()
+    CONSTANTS.CONN_DB.fecharConexao()

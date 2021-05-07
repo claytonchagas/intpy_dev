@@ -2,18 +2,18 @@ import inspect
 from functools import wraps
 import time
 
-from .data_access import get_cache_data, create_entry, salvarNovosDadosBanco
+from .data_access import get_cache_data, create_entry, saveNewDataDB
 from .logger.log import debug
 
 import multiprocessing
-from . import CONSTANTES
-from .banco import Banco
+from . import CONSTANTS
+from .db import DB
 import os
 def _get_cache(func, args, queue):
     print("CONSULTANDO O BANCO {0}({1})...".format(func.__name__, args))
 
     #Opening connection with database for current running process
-    CONSTANTES.CONEXAO_BANCO = Banco(os.path.join(".intpy", "intpy.db"))
+    CONSTANTS.CONN_DB = Banco(os.path.join(".intpy", "intpy.db"))
 
     c = get_cache_data(func.__name__, args, inspect.getsource(func))
     if not _cache_exists(c):
@@ -22,7 +22,7 @@ def _get_cache(func, args, queue):
         debug("cache hit for {0}({1})".format(func.__name__, args))
         queue.put(c)
 
-    CONSTANTES.CONEXAO_BANCO.fecharConexao()
+    CONSTANTS.CONN_DB.fecharConexao()
     print("CONSULTA AO BANCO {0}({1}) CONCLUÍDA!".format(func.__name__, args))
 
 def _cache_exists(cache):
@@ -167,4 +167,4 @@ def deterministic(f):
     return _method_call(f) if _is_method(f) else _function_call(f)
 
 def salvarCache():
-    salvarNovosDadosBanco()
+    saveNewDataDB()

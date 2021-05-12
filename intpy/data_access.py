@@ -86,5 +86,5 @@ def saveNewDataDB():
         debug("inserting reference in database")
         _save(_get_file_name(id))
 
-    CONSTANTS.CONN_DB.salvarAlteracoes()
-    CONSTANTS.CONN_DB.fecharConexao()
+    CONSTANTS.CONN_DB.saveChanges()
+    CONSTANTS.CONN_DB.closeConection()

@@ -13,7 +13,7 @@ def _get_cache(func, args, queue):
     print("CONSULTANDO O BANCO {0}({1})...".format(func.__name__, args))
 
     #Opening connection with database for current running process
-    CONSTANTS.CONN_DB = Banco(os.path.join(".intpy", "intpy.db"))
+    CONSTANTS.CONN_DB = DB(os.path.join(".intpy", "intpy.db"))
 
     c = get_cache_data(func.__name__, args, inspect.getsource(func))
     if not _cache_exists(c):
@@ -22,7 +22,7 @@ def _get_cache(func, args, queue):
         debug("cache hit for {0}({1})".format(func.__name__, args))
         queue.put(c)
 
-    CONSTANTS.CONN_DB.fecharConexao()
+    CONSTANTS.CONN_DB.closeConection()
     print("CONSULTA AO BANCO {0}({1}) CONCLUÍDA!".format(func.__name__, args))
 
 def _cache_exists(cache):
@@ -42,16 +42,6 @@ def _execute_func(f, queue, method_args, method_kwargs, self=None,):
     
     start = time.perf_counter()
     result_value = f(self, *method_args, **method_kwargs) if self is not None else f(*method_args, **method_kwargs)
-    """
-    functionCode = inspect.getsource(f)
-    startExecution = False
-    for codeLine in functionCode:
-        if(startExecution):
-            exec()
-        if(codeLine.startswith("def ")):
-            startExecution = True
-
-    """
     end = time.perf_counter()
 
     elapsed_time = end - start

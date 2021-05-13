@@ -4,20 +4,20 @@ import hashlib
 
 from .logger.log import debug, error, warn
 
-from . import CONSTANTS
+from . import CONN_DB
 
 DICT_NEW_DATA = {}
 
 def _save(file_name):
-    CONSTANTS.CONN_DB.executeCmdSQLNoReturn("INSERT INTO CACHE(cache_file) VALUES ('{0}')".format(file_name))
+    CONN_DB.executeCmdSQLNoReturn("INSERT INTO CACHE(cache_file) VALUES ('{0}')".format(file_name))
 
 
 def _get(id):
-    return CONSTANTS.CONN_DB.executeCmdSQLSelect("SELECT cache_file FROM CACHE WHERE cache_file = '{0}'".format(id))
+    return CONN_DB.executeCmdSQLSelect("SELECT cache_file FROM CACHE WHERE cache_file = '{0}'".format(id))
 
 
 def _remove(id):
-    CONSTANTS.CONN_DB.executeCmdSQLNoReturn("DELETE FROM CACHE WHERE cache_file = '{0}';".format(id))
+    CONN_DB.executeCmdSQLNoReturn("DELETE FROM CACHE WHERE cache_file = '{0}';".format(id))
 
 
 def _get_file_name(id):
@@ -86,5 +86,5 @@ def saveNewDataDB():
         debug("inserting reference in database")
         _save(_get_file_name(id))
 
-    CONSTANTS.CONN_DB.saveChanges()
-    CONSTANTS.CONN_DB.closeConection()
+    CONN_DB.saveChanges()
+    CONN_DB.closeConection()

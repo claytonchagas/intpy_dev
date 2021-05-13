@@ -106,6 +106,7 @@ def _method_call(f):
         print("processReturn:", processReturn)
 
         if(isinstance(processReturn, tuple)):
+            cacheSearchProcess.terminate()
             _cache_data(f, method_args, processReturn[0], inspect.getsource(f))
             return processReturn[0]
         else:
@@ -135,6 +136,7 @@ def _function_call(f):
         print("processReturn:", processReturn)
 
         if(isinstance(processReturn, tuple)):
+            cacheSearchProcess.terminate()
             _cache_data(f, method_args, processReturn[0], inspect.getsource(f))
             return processReturn[0]
         else:

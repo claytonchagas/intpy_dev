@@ -1,6 +1,6 @@
 import time
 
-from intpy.intpy import deterministic
+from intpy.intpy import deterministic, salvarCache
 
 
 @deterministic
@@ -13,5 +13,6 @@ def fib(n):
 
 if __name__ == "__main__":
     start = time.perf_counter()
-    print(fib(30))
+    print(fib(5))
+    salvarCache()
     print(time.perf_counter()-start,"s")

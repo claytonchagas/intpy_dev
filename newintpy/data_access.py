@@ -48,8 +48,8 @@ def get_cache_data_by_id(id):
             with open(".intpy/cache/{0}".format(_get_file_name(id)), 'rb') as file:
                 return pickle.load(file)
         except FileNotFoundError as e:
-            warn("corrupt environment. Cache reference exists for {0} in database but there is no file for it in cache folder.\
- Have you deleted cache folder?".format(fun_name))
+            warn("corrupt environment. Cache reference exists for a function in database but there is no file for it in cache folder.\
+ Have you deleted cache folder?")
             autofix(id)
             return None
 

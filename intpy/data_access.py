@@ -30,8 +30,12 @@ def get_cache_data(fun_name, fun_args, fun_source):
     id = _get_id(fun_name, fun_args, fun_source)
     
     #Checking if the result is saved in the cache
-    if(id in DATA_DICTIONARY):
-        return DATA_DICTIONARY[id]
+    if(id in CACHED_DATA_DICTIONARY):
+        return CACHED_DATA_DICTIONARY[id]
+
+    #Checking if the result was already processed at this execution
+    if(id in NEW_DATA_DICTIONARY):
+        return NEW_DATA_DICTIONARY[id]
 
     return None
 
@@ -45,16 +49,16 @@ def autofix(id):
 
 def create_entry(fun_name, fun_args, fun_return, fun_source):
     id = _get_id(fun_name, fun_args, fun_source)
-    DATA_DICTIONARY[id] = fun_return
+    NEW_DATA_DICTIONARY[id] = fun_return
 
 def salvarNovosDadosBanco():
     def serialize(return_value, file_name):
         with open(".intpy/cache/{0}".format(_get_file_name(file_name)), 'wb') as file:
             return pickle.dump(return_value, file, protocol=pickle.HIGHEST_PROTOCOL)
     
-    for id in DATA_DICTIONARY:
+    for id in NEW_DATA_DICTIONARY:
         debug("serializing return value from {0}".format(id))
-        serialize(DATA_DICTIONARY[id], id)
+        serialize(NEW_DATA_DICTIONARY[id], id)
 
         debug("inserting reference in database")
         _save(_get_file_name(id))
@@ -74,11 +78,11 @@ Have you deleted cache folder?")
 
 
 #Opening database connection and creating select query to the database
-#to populate DATA_DICTIONARY
+#to populate CACHED_DATA_DICTIONARY
 CONEXAO_BANCO = Banco(os.path.join(".intpy", "intpy.db"))
 
 list_of_ipcache_files = CONEXAO_BANCO.executarComandoSQLSelect("SELECT cache_file FROM CACHE")
-DATA_DICTIONARY = {}
+CACHED_DATA_DICTIONARY = {}
 for ipcache_file in list_of_ipcache_files:
     ipcache_file = ipcache_file[0].replace(".ipcache", "")
     
@@ -86,4 +90,6 @@ for ipcache_file in list_of_ipcache_files:
     if(result is None):
         continue
     else:
-        DATA_DICTIONARY[ipcache_file] = result
+        CACHED_DATA_DICTIONARY[ipcache_file] = result
+
+NEW_DATA_DICTIONARY = {}

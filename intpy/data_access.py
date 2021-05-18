@@ -1,6 +1,7 @@
 import pickle
 import re
 import hashlib
+import threading
 
 from .logger.log import debug, error, warn
 from .banco import Banco
@@ -30,8 +31,9 @@ def get_cache_data(fun_name, fun_args, fun_source):
     id = _get_id(fun_name, fun_args, fun_source)
     
     #Checking if the result is saved in the cache
-    if(id in CACHED_DATA_DICTIONARY):
-        return CACHED_DATA_DICTIONARY[id]
+    with CACHED_DATA_DICTIONARY_SEMAPHORE:
+        if(id in CACHED_DATA_DICTIONARY):
+            return CACHED_DATA_DICTIONARY[id]
 
     #Checking if the result was already processed at this execution
     if(id in NEW_DATA_DICTIONARY):
@@ -76,20 +78,28 @@ Have you deleted cache folder?")
         autofix(id)
         return None
 
+def populate_cached_data_dictionary():
+    db_connection = Banco(os.path.join(".intpy", "intpy.db"))
+    list_of_ipcache_files = db_connection.executarComandoSQLSelect("SELECT cache_file FROM CACHE")
+    for ipcache_file in list_of_ipcache_files:
+        ipcache_file = ipcache_file[0].replace(".ipcache", "")
+        
+        result = deserialize(ipcache_file)
+        if(result is None):
+            continue
+        else:
+            with CACHED_DATA_DICTIONARY_SEMAPHORE:
+                CACHED_DATA_DICTIONARY[ipcache_file] = result
+    db_connection.fecharConexao()
+
+CACHED_DATA_DICTIONARY = {}
+
+CACHED_DATA_DICTIONARY_SEMAPHORE = threading.Semaphore()
+load_cached_data_dictionary_thread = threading.Thread(target=populate_cached_data_dictionary)
+load_cached_data_dictionary_thread.start()
 
 #Opening database connection and creating select query to the database
 #to populate CACHED_DATA_DICTIONARY
 CONEXAO_BANCO = Banco(os.path.join(".intpy", "intpy.db"))
-
-list_of_ipcache_files = CONEXAO_BANCO.executarComandoSQLSelect("SELECT cache_file FROM CACHE")
-CACHED_DATA_DICTIONARY = {}
-for ipcache_file in list_of_ipcache_files:
-    ipcache_file = ipcache_file[0].replace(".ipcache", "")
-    
-    result = deserialize(ipcache_file)
-    if(result is None):
-        continue
-    else:
-        CACHED_DATA_DICTIONARY[ipcache_file] = result
 
 NEW_DATA_DICTIONARY = {}

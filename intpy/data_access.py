@@ -9,7 +9,7 @@ from . import CONEXAO_BANCO
 DICIO_NOVOS_DADOS = {}
 
 def _save(file_name):
-    CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT INTO CACHE(cache_file) VALUES ('{0}')".format(file_name))
+    CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT OR IGNORE INTO CACHE(cache_file) VALUES ('{0}')".format(file_name))
 
 
 def _get(id):

@@ -1,18 +1,17 @@
 import pickle
 import re
 import hashlib
-import threading
 
 from .logger.log import debug, error, warn
 from .banco import Banco
 import os
 
-def _save(file_name):
-    CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT OR IGNORE INTO CACHE(cache_file) VALUES ('{0}')".format(file_name))
+def _save(file_name, fun_name):
+    CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT OR IGNORE INTO CACHE(cache_file, fun_name) VALUES ('{0}', '{1}')".format(file_name, fun_name))
 
 
-def _get(id):
-    return CONEXAO_BANCO.executarComandoSQLSelect("SELECT cache_file FROM CACHE WHERE cache_file = '{0}'".format(id))
+def _get(fun_name):
+    return CONEXAO_BANCO.executarComandoSQLSelect("SELECT cache_file FROM CACHE WHERE fun_name = '{0}'".format(fun_name))
 
 
 def _remove(id):
@@ -28,16 +27,43 @@ def _get_id(fun_name, fun_args, fun_source):
 
 
 def get_cache_data(fun_name, fun_args, fun_source):
-    id = _get_id(fun_name, fun_args, fun_source)
+
+    print("NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
+    print("CACHED_DATA_DICTIONARY ANTES:", CACHED_DATA_DICTIONARY)
     
-    #Checking if the result is saved in the cache
-    with CACHED_DATA_DICTIONARY_SEMAPHORE:
+
+    id = _get_id(fun_name, fun_args, fun_source)
+
+    #Checking if the results of this function were already selected from
+    #the database and inserted on the dictionary CACHED_DATA_DICTIONARY
+    if(fun_name in FUNCTIONS_ALREADY_SELECTED_FROM_DB):
+        #Checking if the result is saved in the cache
         if(id in CACHED_DATA_DICTIONARY):
             return CACHED_DATA_DICTIONARY[id]
 
-    #Checking if the result was already processed at this execution
-    if(id in NEW_DATA_DICTIONARY):
-        return NEW_DATA_DICTIONARY[id]
+        #Checking if the result was already processed at this execution
+        if(id in NEW_DATA_DICTIONARY):
+            return NEW_DATA_DICTIONARY[id][0]
+    
+    else:
+        #Creating a select query to add to CACHED_DATA_DICTIONARY all data
+        #related to the function fun_name
+        list_file_names = _get(fun_name)
+        for file_name in list_file_names:
+            file_name = file_name[0].replace(".ipcache", "")
+            
+            result = deserialize(file_name)
+            if(result is None):
+                continue
+            else:
+                CACHED_DATA_DICTIONARY[file_name] = result
+
+        FUNCTIONS_ALREADY_SELECTED_FROM_DB.append(fun_name)
+
+        print("CACHED_DATA_DICTIONARY DEPOIS:", CACHED_DATA_DICTIONARY)
+
+        if(id in CACHED_DATA_DICTIONARY):
+            return CACHED_DATA_DICTIONARY[id]
 
     return None
 
@@ -51,7 +77,7 @@ def autofix(id):
 
 def create_entry(fun_name, fun_args, fun_return, fun_source):
     id = _get_id(fun_name, fun_args, fun_source)
-    NEW_DATA_DICTIONARY[id] = fun_return
+    NEW_DATA_DICTIONARY[id] = (fun_return, fun_name)
 
 def salvarNovosDadosBanco():
     def serialize(return_value, file_name):
@@ -60,10 +86,10 @@ def salvarNovosDadosBanco():
     
     for id in NEW_DATA_DICTIONARY:
         debug("serializing return value from {0}".format(id))
-        serialize(NEW_DATA_DICTIONARY[id], id)
+        serialize(NEW_DATA_DICTIONARY[id][0], id)
 
         debug("inserting reference in database")
-        _save(_get_file_name(id))
+        _save(_get_file_name(id), NEW_DATA_DICTIONARY[id][1])
 
     CONEXAO_BANCO.salvarAlteracoes()
     CONEXAO_BANCO.fecharConexao()
@@ -78,28 +104,8 @@ Have you deleted cache folder?")
         autofix(id)
         return None
 
-def populate_cached_data_dictionary():
-    db_connection = Banco(os.path.join(".intpy", "intpy.db"))
-    list_of_ipcache_files = db_connection.executarComandoSQLSelect("SELECT cache_file FROM CACHE")
-    for ipcache_file in list_of_ipcache_files:
-        ipcache_file = ipcache_file[0].replace(".ipcache", "")
-        
-        result = deserialize(ipcache_file)
-        if(result is None):
-            continue
-        else:
-            with CACHED_DATA_DICTIONARY_SEMAPHORE:
-                CACHED_DATA_DICTIONARY[ipcache_file] = result
-    db_connection.fecharConexao()
-
-CACHED_DATA_DICTIONARY = {}
-
-CACHED_DATA_DICTIONARY_SEMAPHORE = threading.Semaphore()
-load_cached_data_dictionary_thread = threading.Thread(target=populate_cached_data_dictionary)
-load_cached_data_dictionary_thread.start()
-
-#Opening database connection and creating select query to the database
-#to populate CACHED_DATA_DICTIONARY
+#Opening database connection and creating dictionaries
 CONEXAO_BANCO = Banco(os.path.join(".intpy", "intpy.db"))
-
+CACHED_DATA_DICTIONARY = {}
+FUNCTIONS_ALREADY_SELECTED_FROM_DB = []
 NEW_DATA_DICTIONARY = {}

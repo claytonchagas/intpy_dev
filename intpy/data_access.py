@@ -1,6 +1,7 @@
 import pickle
 import re
 import hashlib
+import threading
 
 from .logger.log import debug, error, warn
 from .banco import Banco
@@ -26,6 +27,19 @@ def _get_id(fun_name, fun_args, fun_source):
     return hashlib.md5((fun_name + str(fun_args) + fun_source).encode('utf')).hexdigest()
 
 
+def add_new_data_to_CACHED_DATA_DICTIONARY(list_file_names):
+    for file_name in list_file_names:
+        file_name = file_name[0].replace(".ipcache", "")
+        
+        result = deserialize(file_name)
+        if(result is None):
+            continue
+        else:
+            CACHED_DATA_DICTIONARY[file_name] = result
+
+    print("CACHED_DATA_DICTIONARY DEPOIS:", CACHED_DATA_DICTIONARY)
+
+
 def get_cache_data(fun_name, fun_args, fun_source):
 
     print("NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
@@ -48,22 +62,20 @@ def get_cache_data(fun_name, fun_args, fun_source):
     else:
         #Creating a select query to add to CACHED_DATA_DICTIONARY all data
         #related to the function fun_name
+        FUNCTIONS_ALREADY_SELECTED_FROM_DB.append(fun_name)
+        id_file_name = _get_file_name(id)
+        
         list_file_names = _get(fun_name)
         for file_name in list_file_names:
-            file_name = file_name[0].replace(".ipcache", "")
-            
-            result = deserialize(file_name)
-            if(result is None):
-                continue
-            else:
-                CACHED_DATA_DICTIONARY[file_name] = result
+            if(file_name[0] == id_file_name):
+                thread = threading.Thread(target=add_new_data_to_CACHED_DATA_DICTIONARY, args=(list_file_names,))
+                thread.start()
 
-        FUNCTIONS_ALREADY_SELECTED_FROM_DB.append(fun_name)
-
-        print("CACHED_DATA_DICTIONARY DEPOIS:", CACHED_DATA_DICTIONARY)
-
-        if(id in CACHED_DATA_DICTIONARY):
-            return CACHED_DATA_DICTIONARY[id]
+                file_name = file_name[0].replace(".ipcache", "")
+                return deserialize(file_name)
+        
+        thread = threading.Thread(target=add_new_data_to_CACHED_DATA_DICTIONARY, args=(list_file_names,))
+        thread.start()
 
     return None
 

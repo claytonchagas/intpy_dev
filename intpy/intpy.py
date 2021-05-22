@@ -16,16 +16,16 @@ def _cache_exists(cache):
 
 def _cache_data(func, fun_args, fun_return, elapsed_time):
     debug("starting caching data for {0}({1})".format(func.__name__, fun_args))
-    start = time.clock()
+    start = time.perf_counter()
     create_entry(func.__name__, fun_args, fun_return, inspect.getsource(func))
-    end = time.clock()
+    end = time.perf_counter()
     debug("caching {0} took {1}".format(func.__name__, end - start))
 
 
 def _execute_func(f, self, *method_args, **method_kwargs):
-    start = time.clock()
+    start = time.perf_counter()
     result_value = f(self, *method_args, **method_kwargs) if self is not None else f(*method_args, **method_kwargs)
-    end = time.clock()
+    end = time.perf_counter()
 
     elapsed_time = end - start
 

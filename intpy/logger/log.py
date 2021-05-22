@@ -1,4 +1,11 @@
 import datetime
+import os
+
+
+try:
+    debug_enabled = os.environ['DEBUG']
+except:
+    debug_enabled = 'False'
 
 
 def _log(mode, message):
@@ -6,7 +13,8 @@ def _log(mode, message):
 
 
 def debug(message):
-    _log("DEBUG", message)
+    if debug_enabled == 'True':
+        _log("DEBUG", message)
 
 
 def error(message):

@@ -11,14 +11,14 @@ from .db import DB
 import os
 
 def _get_cache_serial(func, args):
-    print("CONSULTANDO O BANCO {0}({1}) SERIALMENTE...".format(func.__name__, args))
+    ######print("CONSULTANDO O BANCO {0}({1}) SERIALMENTE...".format(func.__name__, args))
     c = get_cache_data(func.__name__, args, inspect.getsource(func))
-    print("CONSULTA AO BANCO {0}({1}) SERIALMENTE CONCLUÍDA!".format(func.__name__, args))
+    ######print("CONSULTA AO BANCO {0}({1}) SERIALMENTE CONCLUÍDA!".format(func.__name__, args))
     return c
 
 
 def _get_cache(func, args, queue):
-    print("CONSULTANDO O BANCO {0}({1})...".format(func.__name__, args))
+    ######print("CONSULTANDO O BANCO {0}({1})...".format(func.__name__, args))
 
     #Opening connection with database for current running process
     CONN_DB = DB(os.path.join(".intpy", "intpy.db"))
@@ -31,7 +31,7 @@ def _get_cache(func, args, queue):
         queue.put(c)
 
     CONN_DB.closeConection()
-    print("CONSULTA AO BANCO {0}({1}) CONCLUÍDA!".format(func.__name__, args))
+    ######print("CONSULTA AO BANCO {0}({1}) CONCLUÍDA!".format(func.__name__, args))
 
 def _cache_exists(cache):
     return cache is not None
@@ -45,7 +45,7 @@ def _cache_data(func, fun_args, fun_return, elapsed_time):
     debug("caching {0} took {1}".format(func.__name__, end - start))
 
 def _execute_func_serial(f, method_args, method_kwargs, self=None,):
-    print("EXECUTANDO A FUNÇÃO {0}({1}) SERIALMENTE...".format(f.__name__, method_args))
+    ######print("EXECUTANDO A FUNÇÃO {0}({1}) SERIALMENTE...".format(f.__name__, method_args))
     
     start = time.perf_counter()
     result_value = f(self, *method_args, **method_kwargs) if self is not None else f(*method_args, **method_kwargs)
@@ -55,13 +55,13 @@ def _execute_func_serial(f, method_args, method_kwargs, self=None,):
 
     debug("{0} took {1} to run".format(f.__name__, elapsed_time))
 
-    print("EXECUÇÃO FUNÇÃO {0}({1}) SERIALMENTE CONCLUÍDA!".format(f.__name__, method_args))
+    ######print("EXECUÇÃO FUNÇÃO {0}({1}) SERIALMENTE CONCLUÍDA!".format(f.__name__, method_args))
 
     return (result_value, elapsed_time)
 
 
 def _execute_func(f, queue, method_args, method_kwargs, self=None,):
-    print("EXECUTANDO A FUNÇÃO {0}({1})...".format(f.__name__, method_args))
+    ######print("EXECUTANDO A FUNÇÃO {0}({1})...".format(f.__name__, method_args))
     
     start = time.perf_counter()
     result_value = f(self, *method_args, **method_kwargs) if self is not None else f(*method_args, **method_kwargs)
@@ -73,7 +73,7 @@ def _execute_func(f, queue, method_args, method_kwargs, self=None,):
 
     queue.put((result_value, elapsed_time, DICT_NEW_DATA))
 
-    print("EXECUÇÃO FUNÇÃO {0}({1}) CONCLUÍDA!".format(f.__name__, method_args))
+    ######print("EXECUÇÃO FUNÇÃO {0}({1}) CONCLUÍDA!".format(f.__name__, method_args))
 
 
 def _method_call(f):
@@ -91,7 +91,7 @@ def _method_call(f):
 
             processReturn = queue.get()
             
-            print("processReturn:", processReturn)
+            ######print("processReturn:", processReturn)
 
             if(isinstance(processReturn, tuple)):
                 cacheSearchProcess.terminate()
@@ -101,7 +101,7 @@ def _method_call(f):
             else:
                 #In this case, the cacheSearchProcess executed faster than the functionExecutionProcess
                 #Stopping functionExecutionProcess
-                print("APAGANDO PROCESSO DA FUNÇÃO {0}({1})...".format(f.__name__, method_args))
+                ######print("APAGANDO PROCESSO DA FUNÇÃO {0}({1})...".format(f.__name__, method_args))
                 methodExecutionProcess.terminate()
             
             return processReturn
@@ -136,7 +136,7 @@ def _function_call(f):
 
             processReturn = queue.get()
             
-            print("processReturn:", processReturn)
+            ######print("processReturn:", processReturn)
 
             if(isinstance(processReturn, tuple)):
                 cacheSearchProcess.terminate()
@@ -146,7 +146,7 @@ def _function_call(f):
             else:
                 #In this case, the cacheSearchProcess executed faster than the functionExecutionProcess
                 #Stopping functionExecutionProcess
-                print("APAGANDO PROCESSO DA FUNÇÃO {0}({1})...".format(f.__name__, method_args))
+                ######print("APAGANDO PROCESSO DA FUNÇÃO {0}({1})...".format(f.__name__, method_args))
                 functionExecutionProcess.terminate()
             
             return processReturn

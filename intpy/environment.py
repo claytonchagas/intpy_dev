@@ -32,6 +32,7 @@ def init_env():
     debug("cheking if intpy environment exists")
     if _env_exists():
         debug("environment already exists")
+        return
 
     debug("creating intpy environment")
     _create_folder()

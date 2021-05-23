@@ -37,8 +37,8 @@ def get_cache_data(fun_name, fun_args, fun_source):
             autofix(id)
             return None
     
-    print("CACHED_DATA_DICTIONARY ANTES:", CACHED_DATA_DICTIONARY)
-    print("NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
+    ######print("CACHED_DATA_DICTIONARY ANTES:", CACHED_DATA_DICTIONARY)
+    ######print("NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
 
 
     id = _get_id(fun_name, fun_args, fun_source)
@@ -51,7 +51,7 @@ def get_cache_data(fun_name, fun_args, fun_source):
     if(id in NEW_DATA_DICTIONARY):
         return NEW_DATA_DICTIONARY[id]
     
-    print("PESQUISANDO NO BANCO...")
+    ######print("PESQUISANDO NO BANCO...")
 
     #Checking if the result is on database
     list_file_name = _get(_get_file_name(id))
@@ -62,7 +62,7 @@ def get_cache_data(fun_name, fun_args, fun_source):
         if(result is not None):
             CACHED_DATA_DICTIONARY[id] = result
 
-            print("CACHED_DATA_DICTIONARY DEPOIS:", CACHED_DATA_DICTIONARY)
+            ######print("CACHED_DATA_DICTIONARY DEPOIS:", CACHED_DATA_DICTIONARY)
         
         return result
     

@@ -28,8 +28,8 @@ def _get_id(fun_name, fun_args, fun_source):
 
 def get_cache_data(fun_name, fun_args, fun_source):
 
-    print("NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
-    print("CACHED_DATA_DICTIONARY ANTES:", CACHED_DATA_DICTIONARY)
+    ######print("NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
+    ######print("CACHED_DATA_DICTIONARY ANTES:", CACHED_DATA_DICTIONARY)
     
 
     id = _get_id(fun_name, fun_args, fun_source)
@@ -60,7 +60,7 @@ def get_cache_data(fun_name, fun_args, fun_source):
 
         FUNCTIONS_ALREADY_SELECTED_FROM_DB.append(fun_name)
 
-        print("CACHED_DATA_DICTIONARY DEPOIS:", CACHED_DATA_DICTIONARY)
+        ######print("CACHED_DATA_DICTIONARY DEPOIS:", CACHED_DATA_DICTIONARY)
 
         if(id in CACHED_DATA_DICTIONARY):
             return CACHED_DATA_DICTIONARY[id]

@@ -37,13 +37,13 @@ def add_new_data_to_CACHED_DATA_DICTIONARY(list_file_names):
         else:
             CACHED_DATA_DICTIONARY[file_name] = result
 
-    print("CACHED_DATA_DICTIONARY DEPOIS:", CACHED_DATA_DICTIONARY)
+    ######print("CACHED_DATA_DICTIONARY DEPOIS:", CACHED_DATA_DICTIONARY)
 
 
 def get_cache_data(fun_name, fun_args, fun_source):
 
-    print("NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
-    print("CACHED_DATA_DICTIONARY ANTES:", CACHED_DATA_DICTIONARY)
+    ######print("NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
+    ######print("CACHED_DATA_DICTIONARY ANTES:", CACHED_DATA_DICTIONARY)
     
 
     id = _get_id(fun_name, fun_args, fun_source)

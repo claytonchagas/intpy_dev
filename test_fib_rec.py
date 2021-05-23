@@ -3,7 +3,7 @@
 import time
 import sys
 
-from intpy.intpy import deterministic
+from intpy.intpy import deterministic, salvarCache
 
 
 @deterministic
@@ -16,6 +16,7 @@ def fib(n):
 def main(n):
     start = time.perf_counter()
     print(fib(n))
+    salvarCache()
     print(time.perf_counter()-start)
 
 

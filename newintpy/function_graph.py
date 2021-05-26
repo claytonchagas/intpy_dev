@@ -30,9 +30,11 @@ class FunctionClassMethodSearcher(ast.NodeVisitor):
         self.__instance_methods = {}
         self.__class_methods = {}
 
+        """
         self.__super_functions = []
         self.__super_classes = []
         self.__super_methods = []
+        """
 
     def search_for_functions_classes_and_methods(self):
         #Finding all declared functions, classes and methods in the AST
@@ -61,17 +63,21 @@ class FunctionClassMethodSearcher(ast.NodeVisitor):
         self.__classes.append(node)
 
         for son_node in node.body:
+            """
             #Checking if "node" is a superclass
             if isinstance(son_node, ast.ClassDef):
                 self.__super_classes.append(node)
                 break
+            """
             
             if(isinstance(son_node, ast.FunctionDef)):
+                """
                 #Checking if "son_node" is a supermethod
                 for element in son_node.body:
                     if(isinstance(element, ast.FunctionDef)):
                         self.__super_methods.append(son_node)
                         break
+                """
 
                 #Checking if "son_node" is an instance method or a class method
                 is_a_class_method = False
@@ -111,11 +117,13 @@ class FunctionClassMethodSearcher(ast.NodeVisitor):
             
             self.__functions[function_name] = node
 
+            """
             #Checking if "node" is a superfunction
             for son_node in node.body:
                 if isinstance(son_node, ast.FunctionDef):
                     self.__super_functions.append(node)
                     break
+            """
 
         self.generic_visit(node)
 
@@ -142,6 +150,7 @@ class FunctionClassMethodSearcher(ast.NodeVisitor):
     def class_methods(self):
         return self.__class_methods
     
+    """
     @property
     def super_functions(self):
         return self.__super_functions
@@ -153,6 +162,7 @@ class FunctionClassMethodSearcher(ast.NodeVisitor):
     @property
     def super_methods(self):
         return self.__super_methods
+    """
 
 class FunctionGraphCreator(ast.NodeVisitor):
     def __init__(self, AST, functions, class_methods, instance_methods):

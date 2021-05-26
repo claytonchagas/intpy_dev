@@ -42,7 +42,7 @@ def _method_call(f):
         if not _cache_exists(c):
             debug("cache miss for {0}({1})".format(f.__name__, *method_args))
             return_value, elapsed_time = _execute_func(f, self, *method_args, **method_kwargs)
-            _cache_data(f, method_args, return_value, inspect.getsource(f))
+            _cache_data(f, method_args, return_value, elapsed_time)
             return return_value
         else:
             debug("cache hit for {0}({1})".format(f.__name__, *method_args))
@@ -59,7 +59,7 @@ def _function_call(f):
         if not _cache_exists(c):
             debug("cache miss for {0}({1})".format(f.__name__, *method_args))
             return_value, elapsed_time = _execute_func(f, *method_args, **method_kwargs)
-            _cache_data(f, method_args, return_value, inspect.getsource(f))
+            _cache_data(f, method_args, return_value, elapsed_time)
             return return_value
         else:
             debug("cache hit for {0}({1})".format(f.__name__, *method_args))

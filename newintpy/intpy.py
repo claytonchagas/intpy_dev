@@ -2,6 +2,7 @@ import inspect
 from functools import wraps
 import time
 
+from .function_graph import *
 from .data_access import get_cache_data, create_entry, saveNewDataDB, DICT_NEW_DATA
 from .logger.log import debug
 
@@ -12,7 +13,8 @@ import os
 
 def _get_cache_serial(func, args):
     ######print("CONSULTANDO O BANCO {0}({1}) SERIALMENTE...".format(func.__name__, args))
-    c = get_cache_data(func.__name__, args, inspect.getsource(func))
+    fun_source = get_source_code_executed(func, USER_SCRIPT_GRAPH)
+    c = get_cache_data(args, fun_source)
     ######print("CONSULTA AO BANCO {0}({1}) SERIALMENTE CONCLUÍDA!".format(func.__name__, args))
     return c
 
@@ -23,7 +25,8 @@ def _get_cache(func, args, queue):
     #Opening connection with database for current running process
     CONN_DB = DB(os.path.join(".intpy", "intpy.db"))
 
-    c = get_cache_data(func.__name__, args, inspect.getsource(func))
+    fun_source = get_source_code_executed(func, USER_SCRIPT_GRAPH)
+    c = get_cache_data(args, fun_source)
     if not _cache_exists(c):
         debug("cache miss for {0}({1})".format(func.__name__, args))
     else:
@@ -40,7 +43,8 @@ def _cache_exists(cache):
 def _cache_data(func, fun_args, fun_return, elapsed_time):
     debug("starting caching data for {0}({1})".format(func.__name__, fun_args))
     start = time.perf_counter()
-    create_entry(func.__name__, fun_args, fun_return, inspect.getsource(func))
+    fun_source = get_source_code_executed(func, USER_SCRIPT_GRAPH)
+    create_entry(fun_args, fun_return, fun_source)
     end = time.perf_counter()
     debug("caching {0} took {1}".format(func.__name__, end - start))
 
@@ -126,6 +130,17 @@ def _function_call(f):
     def wrapper(*method_args, **method_kwargs):
         debug("calling {0}".format(f.__name__))
 
+
+        """
+        print("f.__name__: " + f.__name__)
+        for item in inspect.getmembers(f):
+            if(item[0] == "__qualname__"):
+                print("inspect.getmembers(f).__qualname__: ", item)
+        print("source_code_executed:\n" + get_source_code_executed(f, USER_SCRIPT_GRAPH))
+        print("\n")
+        """        
+
+        
         if(multiprocessing.parent_process() is None):
             #Parallel execution
             queue = multiprocessing.Queue()
@@ -174,5 +189,47 @@ def _is_method(f):
 def deterministic(f):
     return _method_call(f) if _is_method(f) else _function_call(f)
 
+
+def initialize_cache(user_script_path):
+    user_script_ast = python_code_to_AST(user_script_path)
+    
+    if(user_script_path is None):
+        raise RuntimeError
+
+    #Generating function_graph for the user script
+    function_class_method_searcher = FunctionClassMethodSearcher(user_script_ast)
+    function_class_method_searcher.search_for_functions_classes_and_methods()
+    
+    function_graph_creator = FunctionGraphCreator(user_script_ast,
+                                                function_class_method_searcher.functions,
+                                                function_class_method_searcher.class_methods,
+                                                function_class_method_searcher.instance_methods)
+    function_graph_creator.generate_function_graph()
+
+    global USER_SCRIPT_GRAPH
+    USER_SCRIPT_GRAPH = function_graph_creator.function_graph
+
+    #########DEBUG###########
+    dictionary = function_class_method_searcher.functions
+    dictionary.update(function_class_method_searcher.instance_methods)
+    dictionary.update(function_class_method_searcher.class_methods)
+    print("dictionary:", dictionary)
+    USER_SCRIPT_GRAPH.print_graph(dictionary)
+    #########################
+
+
 def salvarCache():
     saveNewDataDB()
+
+
+def initialize_intpy(user_script_path):
+    def decorator(f):
+        def execution(*method_args, **method_kwargs):
+            initialize_cache(user_script_path)
+            f(*method_args, **method_kwargs)
+            salvarCache()
+        return execution
+    return decorator
+
+
+USER_SCRIPT_GRAPH = None

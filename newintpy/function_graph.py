@@ -336,9 +336,9 @@ class Graph():
         return self.__vertices
 
     ############DEBUG#############
-    def print_graph(self):
+    def print_graph(self, d):
         for vertice in self.__vertices:
-            vertice.print_graph_vertice()
+            vertice.print_graph_vertice(d)
 
 class GraphVertice():
     def __init__(self, data):
@@ -361,7 +361,36 @@ class GraphVertice():
         return self.__linked_vertices
 
     ##########DEBUG#############
-    def print_graph_vertice(self):
-        print("Graph Vertice:", self.data)
+    def print_graph_vertice(self, d):
+        for e in d:
+            if(self.data == d[e]):
+                print("Graph Vertice:", e)
         for linked_vertice in self.__linked_vertices:
-            print("    Linked Vertice:", linked_vertice)
+            for e in d:
+                if(linked_vertice.__data == d[e]):
+                    print("    Linked Vertice:", e)
+
+def get_source_code_executed(function, function_graph):
+    list_of_graph_vertices_not_yet_processed = []
+    list_of_graph_vertices_already_processed = []
+    source_codes_executed = []
+
+    for graph_vertice in function_graph.vertices:
+        current_function_def_node = graph_vertice.data
+        if(current_function_def_node.name == function.__name__):
+            list_of_graph_vertices_not_yet_processed.append(graph_vertice)
+
+    while(len(list_of_graph_vertices_not_yet_processed) > 0):
+        current_vertice = list_of_graph_vertices_not_yet_processed.pop(0)
+
+        source_codes_executed.append(ast.unparse(current_vertice.data))
+
+        for linked_vertice in current_vertice.linked_vertices:
+            if(linked_vertice not in list_of_graph_vertices_not_yet_processed and
+            linked_vertice not in list_of_graph_vertices_already_processed and
+            linked_vertice != current_vertice):
+                list_of_graph_vertices_not_yet_processed.append(linked_vertice)
+        
+        list_of_graph_vertices_already_processed.append(current_vertice)
+    
+    return "\n".join(source_codes_executed)

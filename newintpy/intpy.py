@@ -99,7 +99,7 @@ def _method_call(f):
 
             if(isinstance(processReturn, tuple)):
                 cacheSearchProcess.terminate()
-                _cache_data(f, method_args, processReturn[0], inspect.getsource(f))
+                _cache_data(f, method_args, processReturn[0], processReturn[1])
                 DICT_NEW_DATA.update(processReturn[2])
                 return processReturn[0]
             else:
@@ -115,8 +115,8 @@ def _method_call(f):
             c = _get_cache_serial(f, method_args)
             if not _cache_exists(c):
                 debug("cache miss for {0}({1})".format(f.__name__, *method_args))
-                return_value, elapsed_time = _execute_func_serial(f, self, method_args, method_kwargs)
-                _cache_data(f, method_args, return_value, inspect.getsource(f))
+                return_value, elapsed_time = _execute_func_serial(f, method_args, method_kwargs, self)
+                _cache_data(f, method_args, return_value, elapsed_time)
                 return return_value
             else:
                 debug("cache hit for {0}({1})".format(f.__name__, *method_args))
@@ -155,7 +155,7 @@ def _function_call(f):
 
             if(isinstance(processReturn, tuple)):
                 cacheSearchProcess.terminate()
-                _cache_data(f, method_args, processReturn[0], inspect.getsource(f))
+                _cache_data(f, method_args, processReturn[0], processReturn[1])
                 DICT_NEW_DATA.update(processReturn[2])
                 return processReturn[0]
             else:
@@ -172,7 +172,7 @@ def _function_call(f):
             if not _cache_exists(c):
                 debug("cache miss for {0}({1})".format(f.__name__, *method_args))
                 return_value, elapsed_time = _execute_func_serial(f, method_args, method_kwargs)
-                _cache_data(f, method_args, return_value, inspect.getsource(f))
+                _cache_data(f, method_args, return_value, elapsed_time)
                 return return_value
             else:
                 debug("cache hit for {0}({1})".format(f.__name__, *method_args))
@@ -218,7 +218,7 @@ def initialize_cache(user_script_path):
     #########################
 
 
-def salvarCache():
+def save_cache():
     saveNewDataDB()
 
 
@@ -227,7 +227,7 @@ def initialize_intpy(user_script_path):
         def execution(*method_args, **method_kwargs):
             initialize_cache(user_script_path)
             f(*method_args, **method_kwargs)
-            salvarCache()
+            save_cache()
         return execution
     return decorator
 

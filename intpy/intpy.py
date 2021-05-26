@@ -69,7 +69,7 @@ def _method_call(f):
 
         if(isinstance(processReturn, tuple)):
             cacheSearchProcess.terminate()
-            _cache_data(f, method_args, processReturn[0], inspect.getsource(f))
+            _cache_data(f, method_args, processReturn[0], processReturn[1])
             return processReturn[0]
         else:
             #In this case, the cacheSearchProcess executed faster than the methodExecutionProcess
@@ -99,7 +99,7 @@ def _function_call(f):
 
         if(isinstance(processReturn, tuple)):
             cacheSearchProcess.terminate()
-            _cache_data(f, method_args, processReturn[0], inspect.getsource(f))
+            _cache_data(f, method_args, processReturn[0], processReturn[1])
             return processReturn[0]
         else:
             #In this case, the cacheSearchProcess executed faster than the functionExecutionProcess
@@ -120,5 +120,5 @@ def _is_method(f):
 def deterministic(f):
     return _method_call(f) if _is_method(f) else _function_call(f)
 
-def salvarCache():
+def save_cache():
     saveNewDataDB()

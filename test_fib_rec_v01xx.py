@@ -1,6 +1,6 @@
 import time
 
-from intpy.intpy import deterministic, salvarCache
+from intpy.intpy import deterministic
 
 
 @deterministic

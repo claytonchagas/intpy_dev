@@ -12,7 +12,8 @@ def fib(n):
 
 
 if __name__ == "__main__":
+    n = float(sys.argv[1])
     start = time.perf_counter()
-    print(fib(5))
-    salvarCache()
-    print(time.perf_counter()-start,"s")
+    print(fib(n))
+    #salvarCache()
+    print(time.perf_counter()-start)

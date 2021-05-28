@@ -1,6 +1,7 @@
 import time
 
 
+@deterministic
 def pow(n, m):
     if m == 0:
         return 1
@@ -9,6 +10,8 @@ def pow(n, m):
 
 
 if __name__ == "__main__":
+    n, m = float(sys.argv[1], float(sys.argv[2])
     start = time.perf_counter()
-    print(pow(60, 997))
-    print(time.perf_counter()-start,"s")
+    print(pow(n, m))
+    salvarcache()
+    print(time.perf_counter()-start)

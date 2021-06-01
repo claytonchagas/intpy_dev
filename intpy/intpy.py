@@ -122,3 +122,13 @@ def deterministic(f):
 
 def save_cache():
     saveNewDataDB()
+
+#On the decorator "initialize_intpy", "user_script_path" is declared
+#to maintain compatibility between different versions of IntPy
+def initialize_intpy(user_script_path):
+    def decorator(f):
+        def execution(*method_args, **method_kwargs):
+            f(*method_args, **method_kwargs)
+            save_cache()
+        return execution
+    return decorator

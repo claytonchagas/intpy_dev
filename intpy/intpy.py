@@ -76,3 +76,10 @@ def _is_method(f):
 
 def deterministic(f):
     return _method_call(f) if _is_method(f) else _function_call(f)
+
+def initialize_intpy(user_script_path):
+    def decorator(f):
+        def execution(*method_args, **method_kwargs):
+            f(*method_args, **method_kwargs)
+        return execution
+    return decorator

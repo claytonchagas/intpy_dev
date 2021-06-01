@@ -78,3 +78,13 @@ def deterministic(f):
 
 def salvarCache():
     salvarNovosDadosBanco()
+
+#On the decorator "initialize_intpy", "user_script_path" is declared
+#to maintain compatibility between different versions of IntPy
+def initialize_intpy(user_script_path):
+    def decorator(f):
+        def execution(*method_args, **method_kwargs):
+            f(*method_args, **method_kwargs)
+            salvarCache()
+        return execution
+    return decorator

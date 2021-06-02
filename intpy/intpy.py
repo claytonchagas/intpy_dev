@@ -1,6 +1,7 @@
 import inspect
 from functools import wraps
 import time
+import sys
 
 from .data_access import get_cache_data, create_entry
 from .logger.log import debug
@@ -75,7 +76,12 @@ def _is_method(f):
 
 
 def deterministic(f):
+    PCACHE = str(sys.argv[-1])
+    #print(PCACHE)
+    if PCACHE == "--no-cache":
+        return f
     return _method_call(f) if _is_method(f) else _function_call(f)
+
 
 def initialize_intpy(user_script_path):
     def decorator(f):

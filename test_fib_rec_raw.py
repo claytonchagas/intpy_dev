@@ -1,19 +1,23 @@
 import time
+import sys
 
-from intpy.intpy import deterministic, salvarCache
+#from intpy.intpy import deterministic, initialize_intpy
 
 
 #@deterministic
 def fib(n):
     if n < 2:
         return n
-
     return fib(n-1) + fib(n-2)
 
 
-if __name__ == "__main__":
-    n = float(sys.argv[1])
-    start = time.perf_counter()
+#@initialize_intpy(__file__)
+def main(n):
     print(fib(n))
-    #salvarCache()
+
+
+if __name__ == "__main__":
+    n = int(sys.argv[1])
+    start = time.perf_counter()
+    main(n)
     print(time.perf_counter()-start)

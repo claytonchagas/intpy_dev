@@ -3,12 +3,6 @@
 import time
 import random
 import numpy as np
-#import os
-#import sys
-#currentdir = os.path.dirname(os.path.realpath(__file__))
-#parentdir = os.path.dirname(currentdir)
-#sys.path.append(parentdir)
-#sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 from intpy.intpy import deterministic
 
@@ -26,6 +20,11 @@ def quicksort(list):
     return quicksort(lesser) + equal + quicksort(greater)
 
 
+@initialize_intpy(__file__)
+def main(unsort_list):
+    print(quicksort(unsort_list))
+
+
 if __name__ == "__main__":
     #enter in the python command line:
     #pytho3 test_quicksort_random.py start(int) stop(int) size(int)
@@ -34,9 +33,7 @@ if __name__ == "__main__":
     n1 = int(sys.argv[1])
     n2 = int(sys.argv[2])
     n3 = int(sys.argv[3])
-    sort_list = np.random.randint(n1, n2, (n3))
-    print(sort_list)
+    unsort_list = np.random.randint(n1, n2, n3)
     start = time.perf_counter()
-    print(quicksort(sort_list))
-    salvarCache()
+    main(unsort_list)
     print(time.perf_counter()-start)

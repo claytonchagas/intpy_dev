@@ -1,14 +1,6 @@
 #test_quicksort_rec_fixed.py
 
 import time
-#import random
-#import numpy as np
-#import os
-#import sys
-#currentdir = os.path.dirname(os.path.realpath(__file__))
-#parentdir = os.path.dirname(currentdir)
-#sys.path.append(parentdir)
-#sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 from intpy.intpy import deterministic
 
@@ -26,8 +18,13 @@ def quicksort(list):
     return quicksort(lesser) + equal + quicksort(greater)
 
 
+@initialize_intpy(__file__)
+def main(unsort_list):
+    print(quicksort(unsort_list))
+
+
 if __name__ == "__main__":
-    sort_list = [5976, 3199, 4421, 7189, 9399, 4640, 2722, 7186, 1968, 1960, 9029, 2336, 6218, 1618, 4031, 9027, 5527, 4278, 1316, 2352, 986, 2954, 6908, 5394, 8458, 
+    unsort_list = [5976, 3199, 4421, 7189, 9399, 4640, 2722, 7186, 1968, 1960, 9029, 2336, 6218, 1618, 4031, 9027, 5527, 4278, 1316, 2352, 986, 2954, 6908, 5394, 8458, 
 2885, 5694, 9823, 6815, 4628, 9443, 1610, 257, 9683, 4855, 6854, 1094, 5800, 1959, 8865, 5961, 2653, 2144, 975, 9432, 2170, 4795, 2234, 9904, 6054, 
 5360, 5682, 8485, 1196, 6935, 1670, 824, 7480, 198, 7183, 7685, 1632, 9952, 6504, 2478, 6157, 4824, 218, 2294, 9900, 5653, 8920, 794, 67, 1095, 1288, 
 4417, 3933, 2694, 4982, 3158, 2694, 8586, 7566, 264, 2841, 7122, 6887, 9516, 7553, 3287, 9873, 8726, 7192, 2459, 1512, 5136, 5715, 2440, 301, 1016, 
@@ -69,8 +66,6 @@ if __name__ == "__main__":
 7737, 1491, 938, 2101, 3353, 6097, 4454, 5641, 2317, 3554, 6491, 3408, 8060, 1824, 4094, 2444, 2194, 6559, 6852, 1057, 5315, 7655, 4136, 6435,
 969]
 
-    print(sort_list)
     start = time.perf_counter()
-    print(quicksort(sort_list))
-    salvarCache()
+    main(unsort_list)
     print(time.perf_counter()-start)

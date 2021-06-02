@@ -1,7 +1,12 @@
+#test_fib_it.py
+
 import time
 import sys
 
+from intpy.intpy import initialize_intpy, deterministic
 
+
+@deterministic
 def fib(n):
     a,b = 0,1
     for i in range(n):
@@ -9,6 +14,7 @@ def fib(n):
     return a
 
 
+@initialize_intpy(__file__)
 def main(n):
     print(fib(n))
 

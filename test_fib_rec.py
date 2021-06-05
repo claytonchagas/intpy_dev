@@ -3,7 +3,7 @@
 import time
 import sys
 
-from intpy.intpy import deterministic, salvarCache
+from intpy.intpy import initialize_intpy, deterministic
 
 
 @deterministic
@@ -13,13 +13,13 @@ def fib(n):
     return fib(n-1) + fib(n-2)
 
 
+@initialize_intpy(__file__)
 def main(n):
-    start = time.perf_counter()
     print(fib(n))
-    salvarCache()
-    print(time.perf_counter()-start)
 
 
 if __name__ == "__main__":
-    n = float(sys.argv[1])
+    n = int(sys.argv[1])
+    start = time.perf_counter()
     main(n)
+    print(time.perf_counter()-start)

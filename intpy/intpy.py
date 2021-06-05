@@ -1,6 +1,7 @@
 import inspect
 from functools import wraps
 import time
+import sys
 
 from .data_access import get_cache_data, create_entry, saveNewDataDB
 from .logger.log import debug
@@ -117,8 +118,14 @@ def _is_method(f):
     return bool(args and args[0] == 'self')
 
 
-def deterministic(f):
-    return _method_call(f) if _is_method(f) else _function_call(f)
+PCACHE = str(sys.argv[-1])
+if PCACHE == "--no-cache":
+    def deterministic(f):
+        return f
+else:
+    def deterministic(f):
+        return _method_call(f) if _is_method(f) else _function_call(f)
+
 
 def save_cache():
     saveNewDataDB()
@@ -129,6 +136,7 @@ def initialize_intpy(user_script_path):
     def decorator(f):
         def execution(*method_args, **method_kwargs):
             f(*method_args, **method_kwargs)
-            save_cache()
+            if PCACHE != "--no-cache":
+                save_cache()
         return execution
     return decorator

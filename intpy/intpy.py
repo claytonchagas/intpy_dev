@@ -75,12 +75,20 @@ def _is_method(f):
     return bool(args and args[0] == 'self')
 
 
-def deterministic(f):
-    PCACHE = str(sys.argv[-1])
+##def deterministic(f):
+    ##PCACHE = str(sys.argv[-1])
     #print(PCACHE)
-    if PCACHE == "--no-cache":
+    ##if PCACHE == "--no-cache":
+        ##return f
+    ##return _method_call(f) if _is_method(f) else _function_call(f)
+
+PCACHE = str(sys.argv[-1])
+if PCACHE == "--no-cache":
+    def deterministic(f):
         return f
-    return _method_call(f) if _is_method(f) else _function_call(f)
+else:
+    def deterministic(f):
+        return _method_call(f) if _is_method(f) else _function_call(f)
 
 
 def initialize_intpy(user_script_path):

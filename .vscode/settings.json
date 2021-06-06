@@ -1,4 +1,4 @@
 {
     "workbench.editor.enablePreview": false,
-    "python.pythonPath": "/home/joaolopez/anaconda3/envs/IntegracaoNoWorkflow/bin/python"
+    "python.pythonPath": "/usr/bin/python3"
 }

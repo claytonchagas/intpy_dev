@@ -24,22 +24,25 @@ class FunctionClassMethodSearcher(ast.NodeVisitor):
     def __init__(self, AST):
         self.__AST = AST
         self.__imported_modules = []
-        
         self.__functions = {}
+
+        """
         self.__classes = []
         self.__instance_methods = {}
         self.__class_methods = {}
 
-        """
         self.__super_functions = []
         self.__super_classes = []
         self.__super_methods = []
         """
 
     def search_for_functions_classes_and_methods(self):
-        #Finding all declared functions, classes and methods in the AST
+        #Finding all declared functions in the AST
+        """
         self.__current_class = None
         self.__current_class_name = ""
+        """
+
         self.__current_function = None
         self.__current_function_name = ""
         self.visit(self.__AST)
@@ -50,6 +53,9 @@ class FunctionClassMethodSearcher(ast.NodeVisitor):
         self.generic_visit(node)
     
     def visit_ClassDef(self, node):
+        #This function avoids that child nodes of ClassDef nodes
+        #(ex.: methods) be visited during search
+        """
         previous_class_name = self.__current_class_name
         if(self.__current_class_name == ""):
             self.__current_class_name = node.name
@@ -63,21 +69,21 @@ class FunctionClassMethodSearcher(ast.NodeVisitor):
         self.__classes.append(node)
 
         for son_node in node.body:
-            """
+            
             #Checking if "node" is a superclass
             if isinstance(son_node, ast.ClassDef):
                 self.__super_classes.append(node)
                 break
-            """
+            
             
             if(isinstance(son_node, ast.FunctionDef)):
-                """
+                
                 #Checking if "son_node" is a supermethod
                 for element in son_node.body:
                     if(isinstance(element, ast.FunctionDef)):
                         self.__super_methods.append(son_node)
                         break
-                """
+                
 
                 #Checking if "son_node" is an instance method or a class method
                 is_a_class_method = False
@@ -91,11 +97,12 @@ class FunctionClassMethodSearcher(ast.NodeVisitor):
                     self.__class_methods[method_name] = son_node
                 else:
                     self.__instance_methods[method_name] = son_node
-
+        
         self.generic_visit(node)
 
         self.__current_class = previous_class
         self.__current_class_name = previous_class_name
+        """
     
     def visit_FunctionDef(self, node):
         previous_function_name = self.__current_function_name
@@ -107,6 +114,7 @@ class FunctionClassMethodSearcher(ast.NodeVisitor):
         previous_function = self.__current_function
         self.__current_function = node
 
+        """
         if(self.__current_class == None) or ((node not in self.__instance_methods.values()) and (node not in self.class_methods.values())):
             #Adding new function found to "self.__functions"
             function_name = ""
@@ -114,16 +122,16 @@ class FunctionClassMethodSearcher(ast.NodeVisitor):
                 function_name = self.__current_class_name + "." + self.__current_function_name
             else:
                 function_name = self.__current_function_name
-            
-            self.__functions[function_name] = node
+        """
+        self.__functions[self.__current_function_name] = node
 
-            """
+        """
             #Checking if "node" is a superfunction
             for son_node in node.body:
                 if isinstance(son_node, ast.FunctionDef):
                     self.__super_functions.append(node)
                     break
-            """
+        """
 
         self.generic_visit(node)
 
@@ -138,6 +146,7 @@ class FunctionClassMethodSearcher(ast.NodeVisitor):
     def functions(self):
         return self.__functions
 
+    """
     @property
     def classes(self):
         return self.__classes
@@ -150,7 +159,6 @@ class FunctionClassMethodSearcher(ast.NodeVisitor):
     def class_methods(self):
         return self.__class_methods
     
-    """
     @property
     def super_functions(self):
         return self.__super_functions
@@ -165,24 +173,33 @@ class FunctionClassMethodSearcher(ast.NodeVisitor):
     """
 
 class FunctionGraphCreator(ast.NodeVisitor):
+    """
     def __init__(self, AST, functions, class_methods, instance_methods):
         #The "AST" argument passed to this constructor must be the AST of the Python code
         #The arguments "functions", "class_methods" and "instance_methods" must be dictionaries
         #which keys must be strings representing the name of the functions/methods and the
         #values must be the correspondents AST nodes
+    """
+    def __init__(self, AST, functions):
+        #The "AST" argument passed to this constructor must be the AST of the Python code
+        #The argument "functions" must be a dictionary which keys must be strings representing
+        #the name of the functions and the values must be the correspondents AST nodes
 
         self.__AST = AST
         self.__functions = functions
+        """
         self.__class_methods = class_methods
         self.__instance_methods = instance_methods
+        """
 
         self.__function_graph = Graph()
 
     def generate_function_graph(self):
-        #Inserting all functions and methods in the function graph
+        #Inserting all functions in the function graph
         for function in self.__functions.values():
             self.__function_graph.insert_vertice(GraphVertice(function))
         
+        """
         for class_method in self.__class_methods.values():
             self.__function_graph.insert_vertice(GraphVertice(class_method))
 
@@ -190,11 +207,16 @@ class FunctionGraphCreator(ast.NodeVisitor):
             self.__function_graph.insert_vertice(GraphVertice(instance_method))
 
         self.__current_class_name = ""
+        """
+
         self.__current_function_name = ""
         self.__current_function = None
         self.visit(self.__AST)
 
     def visit_ClassDef(self, node):
+        #This function avoids that child nodes of ClassDef nodes
+        #(ex.: methods) be visited during the graph creation
+        """
         previous_class_name = self.__current_class_name
         if(self.__current_class_name != ""):
             self.__current_class_name = self.__current_class_name + "." + node.name
@@ -204,6 +226,7 @@ class FunctionGraphCreator(ast.NodeVisitor):
         self.generic_visit(node)
 
         self.__current_class_name = previous_class_name
+        """
 
     def visit_FunctionDef(self, node):
         previous_function_name = self.__current_function_name
@@ -239,11 +262,14 @@ class FunctionGraphCreator(ast.NodeVisitor):
 
                 if(len(possible_functions_called) >= 1):
                     #Finding function defined in the smaller scope
+                    """
                     function_called_name_prefix = ""
+                    
                     if(self.__current_class_name != ""):
                         function_called_name_prefix = self.__current_class_name + "." + self.__current_function_name + "."
                     else:
-                        function_called_name_prefix = self.__current_function_name + "."
+                    """
+                    function_called_name_prefix = self.__current_function_name + "."
                     
                     while(function_called == None):
 
@@ -265,6 +291,7 @@ class FunctionGraphCreator(ast.NodeVisitor):
                         else:
                             function_called_name_prefix = ""
                         
+                        """
                         if(self.__current_class_name != ""):
                             #Testing if (function_called_name_prefix = self.__current_class_name + ".")
                             #In this case function_called_name_prefix must be an empty string because
@@ -273,10 +300,10 @@ class FunctionGraphCreator(ast.NodeVisitor):
                             #is not an instance of ast.Name
                             if(len(function_called_name_prefix) == len(self.__current_class_name) + 1 ):
                                 function_called_name_prefix = ""
-            
+                        """
+            """
             elif(isinstance(node.func, ast.Attribute)):
-                #In this case the function called can be either a function imported from a module
-                #or a method
+                #In this case the function called is a function imported from a module
 
                 #Building the name of the function called
                 current_node = node.func
@@ -288,6 +315,7 @@ class FunctionGraphCreator(ast.NodeVisitor):
 
                 function_called_name_parts.reverse()
                 function_called_name = ".".join(function_called_name_parts)
+                
                 
                 #Testing if the function called is an instance method
                 if(function_called_name[0] == "self"):
@@ -304,6 +332,7 @@ class FunctionGraphCreator(ast.NodeVisitor):
                         if(function_called_name == class_method_name):
                             function_called = self.__class_methods[class_method_name]
                             break
+            """
 
             #Testing if the function called is one of the functions declared by the user
             if(function_called != None):

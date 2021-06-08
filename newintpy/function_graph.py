@@ -52,6 +52,11 @@ class FunctionClassMethodSearcher(ast.NodeVisitor):
             self.__imported_modules.append(node)
         self.generic_visit(node)
     
+    def visit_ImportFrom(self, node):
+        if(node not in self.__imported_modules):
+            self.__imported_modules.append(node)
+        self.generic_visit(node)
+    
     def visit_ClassDef(self, node):
         #This function avoids that child nodes of ClassDef nodes
         #(ex.: methods) be visited during search

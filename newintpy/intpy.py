@@ -191,47 +191,8 @@ def deterministic(f):
 
 
 def initialize_cache(user_script_path):
-    user_script_ast = python_code_to_AST(user_script_path)
-    
-    if(user_script_path is None):
-        raise RuntimeError
-
-    #Generating function_graph for the user script
-    function_class_method_searcher = FunctionClassMethodSearcher(user_script_ast)
-    function_class_method_searcher.search_for_functions_classes_and_methods()
-    
-    function_graph_creator = FunctionGraphCreator(user_script_ast,
-                                                function_class_method_searcher.functions)
-    function_graph_creator.generate_function_graph()
-
     global USER_SCRIPT_GRAPH
-    USER_SCRIPT_GRAPH = function_graph_creator.function_graph
-
-    #########DEBUG###########
-    dictionary = function_class_method_searcher.functions
-    #dictionary.update(function_class_method_searcher.instance_methods)
-    #dictionary.update(function_class_method_searcher.class_methods)
-    print("dictionary:", dictionary)
-    USER_SCRIPT_GRAPH.print_graph(dictionary)
-
-    print("")
-    import ast
-    for comandoImport in function_class_method_searcher.imported_modules:
-        if isinstance(comandoImport, ast.Import):
-            print("ast.Import")
-            for alias in comandoImport.names:
-                print("    alias.name = {0}".format(alias.name))
-                print("    alias.asname = {0}\n".format(alias.asname))
-        
-        if isinstance(comandoImport, ast.ImportFrom):
-            print("ast.ImportFrom")
-            print("    module = {0}".format(comandoImport.module))
-            print("    level = {0}".format(comandoImport.level))
-            for alias in comandoImport.names:
-                print("    alias.name = {0}".format(alias.name))
-                print("    alias.asname = {0}\n".format(alias.asname))
-        
-    #########################
+    USER_SCRIPT_GRAPH = create_experiment_function_graph(user_script_path)
 
 
 def save_cache():

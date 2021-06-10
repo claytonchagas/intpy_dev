@@ -201,9 +201,7 @@ def initialize_cache(user_script_path):
     function_class_method_searcher.search_for_functions_classes_and_methods()
     
     function_graph_creator = FunctionGraphCreator(user_script_ast,
-                                                function_class_method_searcher.functions,
-                                                function_class_method_searcher.class_methods,
-                                                function_class_method_searcher.instance_methods)
+                                                function_class_method_searcher.functions)
     function_graph_creator.generate_function_graph()
 
     global USER_SCRIPT_GRAPH
@@ -211,10 +209,28 @@ def initialize_cache(user_script_path):
 
     #########DEBUG###########
     dictionary = function_class_method_searcher.functions
-    dictionary.update(function_class_method_searcher.instance_methods)
-    dictionary.update(function_class_method_searcher.class_methods)
+    #dictionary.update(function_class_method_searcher.instance_methods)
+    #dictionary.update(function_class_method_searcher.class_methods)
     print("dictionary:", dictionary)
     USER_SCRIPT_GRAPH.print_graph(dictionary)
+
+    print("")
+    import ast
+    for comandoImport in function_class_method_searcher.imported_modules:
+        if isinstance(comandoImport, ast.Import):
+            print("ast.Import")
+            for alias in comandoImport.names:
+                print("    alias.name = {0}".format(alias.name))
+                print("    alias.asname = {0}\n".format(alias.asname))
+        
+        if isinstance(comandoImport, ast.ImportFrom):
+            print("ast.ImportFrom")
+            print("    module = {0}".format(comandoImport.module))
+            print("    level = {0}".format(comandoImport.level))
+            for alias in comandoImport.names:
+                print("    alias.name = {0}".format(alias.name))
+                print("    alias.asname = {0}\n".format(alias.asname))
+        
     #########################
 
 

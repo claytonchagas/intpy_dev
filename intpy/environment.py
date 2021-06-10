@@ -2,7 +2,7 @@ import os
 import ctypes
 
 from .db import DB
-from intpy.logger.log import debug
+from .logger.log import debug
 
 FOLDER_NAME = ".intpy"
 CACHE_FOLDER_NAME = FOLDER_NAME + "/cache"

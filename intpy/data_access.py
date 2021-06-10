@@ -3,7 +3,6 @@ import re
 import hashlib
 
 from .logger.log import debug, error, warn
-
 from . import CONN_DB
 
 DICT_NEW_DATA = {}
@@ -24,12 +23,15 @@ def _get_file_name(id):
     return "{0}.{1}".format(id, "ipcache")
 
 
-def _get_id(fun_name, fun_args, fun_source):
-    return hashlib.md5((fun_name + str(fun_args) + fun_source).encode('utf')).hexdigest()
+def _get_id(fun_args, fun_source):
+    
+    print("TEXTO UTILIZADO PARA GERAR HASH:")
+    print((str(fun_args) + fun_source).encode('utf'))
 
+    return hashlib.md5((str(fun_args) + fun_source).encode('utf')).hexdigest()
 
-def get_cache_data(fun_name, fun_args, fun_source):
-    id = _get_id(fun_name, fun_args, fun_source)
+def get_cache_data(fun_args, fun_source):
+    id = _get_id(fun_args, fun_source)
     return get_cache_data_by_id(id)
 
 def get_cache_data_by_id(id):
@@ -48,8 +50,8 @@ def get_cache_data_by_id(id):
             with open(".intpy/cache/{0}".format(_get_file_name(id)), 'rb') as file:
                 return pickle.load(file)
         except FileNotFoundError as e:
-            warn("corrupt environment. Cache reference exists for {0} in database but there is no file for it in cache folder.\
- Have you deleted cache folder?".format(fun_name))
+            warn("corrupt environment. Cache reference exists for a function in database but there is no file for it in cache folder.\
+ Have you deleted cache folder?")
             autofix(id)
             return None
 
@@ -63,8 +65,8 @@ def autofix(id):
     debug("environment fixed")
 
 
-def create_entry(fun_name, fun_args, fun_return, fun_source):
-    id = _get_id(fun_name, fun_args, fun_source)
+def create_entry(fun_args, fun_return, fun_source):
+    id = _get_id(fun_args, fun_source)
     DICT_NEW_DATA[id] = fun_return
 
 def saveNewDataDB():

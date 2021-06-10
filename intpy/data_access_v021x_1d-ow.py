@@ -3,8 +3,12 @@ import re
 import hashlib
 
 from .logger.log import debug, error, warn
+from .banco import Banco
+import os
 
-from . import CONEXAO_BANCO
+#from . import CONEXAO_BANCO
+
+CONEXAO_BANCO = Banco(os.path.join(".intpy", "intpy.db"))
 
 DICIO_NOVOS_DADOS = {}
 

@@ -2,12 +2,35 @@ import inspect
 from functools import wraps
 import time
 import sys
+import importlib
 
-from .data_access import get_cache_data, create_entry, salvarNovosDadosBanco
+
+version = str(sys.argv[-2])
+
+if version == "-v=1d-ow":
+    v_data_access = ".data_access_v021x_1d-ow"
+else:
+    v_data_access = ".data_access"
+
+
+v_data_access_import = importlib.import_module(v_data_access, package="intpy")
+print(v_data_access_import)
+
+f_get_cache_data = getattr(v_data_access_import, "get_cache_data")
+print(f_get_cache_data)
+
+f_create_entry = getattr(v_data_access_import, "create_entry")
+print(f_create_entry)
+
+f_salvarNovosDadosBanco = getattr(v_data_access_import, "salvarNovosDadosBanco")
+print(f_salvarNovosDadosBanco)
+
+# from .data_access import get_cache_data, create_entry, salvarNovosDadosBanco
 from .logger.log import debug
 
 def _get_cache(func, args):
-    return get_cache_data(func.__name__, args, inspect.getsource(func))
+    # return get_cache_data(func.__name__, args, inspect.getsource(func))
+    return f_get_cache_data(func.__name__, args, inspect.getsource(func))
 
 
 def _cache_exists(cache):
@@ -17,7 +40,8 @@ def _cache_exists(cache):
 def _cache_data(func, fun_args, fun_return, elapsed_time):
     debug("starting caching data for {0}({1})".format(func.__name__, fun_args))
     start = time.perf_counter()
-    create_entry(func.__name__, fun_args, fun_return, inspect.getsource(func))
+    # create_entry(func.__name__, fun_args, fun_return, inspect.getsource(func))
+    f_create_entry(func.__name__, fun_args, fun_return, inspect.getsource(func))
     end = time.perf_counter()
     debug("caching {0} took {1}".format(func.__name__, end - start))
 
@@ -84,7 +108,8 @@ else:
 
 
 def salvarCache():
-    salvarNovosDadosBanco()
+    f_salvarNovosDadosBanco()
+    # salvarNovosDadosBanco()
 
 #On the decorator "initialize_intpy", "user_script_path" is declared
 #to maintain compatibility between different versions of IntPy
@@ -92,7 +117,9 @@ def initialize_intpy(user_script_path):
     def decorator(f):
         def execution(*method_args, **method_kwargs):
             f(*method_args, **method_kwargs)
+            #print(PCACHE)
             if PCACHE != "--no-cache":
+                #print(PCACHE)
                 salvarCache()
         return execution
     return decorator

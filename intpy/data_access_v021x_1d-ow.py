@@ -6,6 +6,12 @@ from .logger.log import debug, error, warn
 from .banco import Banco
 import os
 
+#from . import CONEXAO_BANCO
+
+CONEXAO_BANCO = Banco(os.path.join(".intpy", "intpy.db"))
+
+DICIO_NOVOS_DADOS = {}
+
 def _save(file_name):
     CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT OR IGNORE INTO CACHE(cache_file) VALUES ('{0}')".format(file_name))
 

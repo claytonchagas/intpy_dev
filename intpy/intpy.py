@@ -121,5 +121,7 @@ def initialize_intpy(user_script_path):
             if PCACHE != "--no-cache":
                 #print(PCACHE)
                 salvarCache()
+            #if PCACHE != "--no-cache":
+            salvarCache()
         return execution
     return decorator

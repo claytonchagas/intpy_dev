@@ -2,29 +2,82 @@ import inspect
 from functools import wraps
 import time
 import sys
+import importlib
+import argparse
 
-from .data_access import get_cache_data, create_entry, saveNewDataDB
+
+def usage_msg():
+    return "\nIntPy's Python command line arguments help:\n\n\
+To run your experiment with IntPy use:\n\
+$ python "+str(sys.argv[0])+" program_arguments [-h] [-v version, --version version] [--no-cache]\n\n\
+To run in the IntPy DEBUG mode use:\n\
+$ DEBUG=True python "+str(sys.argv[0])+" program_arguments [-h] [-v version, --version version] [--no-cache]"
+    
+
+versions = ['1d-ow', 'v021x', '1d-ad', 'v022x', '2d-ad', 'v023x', '2d-ad-t', 'v024x', '2d-ad-f', 'v025x', '2d-ad-ft', 'v026x', '2d-lz', 'v027x']
+
+intpy_arg_parser = argparse.ArgumentParser(usage=usage_msg())
+
+intpy_arg_parser.add_argument('args',
+                               metavar='program arguments',
+                               nargs='*',
+                               type=str, 
+                               help='program arguments')
+
+intpy_arg_parser.add_argument('-v',
+                              '--version',
+                               choices=versions,
+                               metavar='',
+                               nargs=1,
+                               type=str, 
+                               help='IntPy\'s mechanism version: choose one of the following options: '+', '.join(versions))
+
+intpy_arg_parser.add_argument('--no-cache',
+                              default=False,
+                              action="store_true",
+                              help='IntPy\'s disable cache')
+
+args = intpy_arg_parser.parse_args()
+
+print(args.version)
+
+if args.version == ['1d-ow'] or args.version == ['v021x']:
+    v_data_access = ".data_access_v021x_1d-ow"
+elif args.version == ['1d-ad'] or args.version == ['v022x']:
+    v_data_access = ".data_access_v022x_1d-ad"
+elif args.version == ['2d-ad'] or args.version == ['v023x']:
+    v_data_access = ".data_access_v023x_2d-ad"
+elif args.version == ['2d-ad-t'] or args.version == ['v024x']:
+    v_data_access = ".data_access_v024x_2d-ad-t"
+elif args.version == ['2d-ad-f'] or args.version == ['v025x']:
+    v_data_access = ".data_access_v025x_2d-ad-f"
+elif args.version == ['2d-ad-ft'] or args.version == ['v026x']:
+    v_data_access = ".data_access_v026x_2d-ad-ft"
+elif args.version == ['2d-lz'] or args.version == ['v027x']:
+    v_data_access = ".data_access_v027x_2d-lz"
+else:
+    v_data_access = ".data_access_v021x_1d-ow"
+
+
+v_data_access_import = importlib.import_module(v_data_access, package="intpy")
+print(v_data_access_import)
+
+f_get_cache_data = getattr(v_data_access_import, "get_cache_data")
+print(f_get_cache_data)
+
+f_create_entry = getattr(v_data_access_import, "create_entry")
+print(f_create_entry)
+
+f_salvarNovosDadosBanco = getattr(v_data_access_import, "salvarNovosDadosBanco")
+print(f_salvarNovosDadosBanco)
+
+# from .data_access import get_cache_data, create_entry, salvarNovosDadosBanco
 from .logger.log import debug
 
-import multiprocessing
-from . import CONN_DB
-from .db import DB
-import os
-def _get_cache(func, args, queue):
-    ######print("CONSULTANDO O BANCO {0}({1})...".format(func.__name__, args))
+def _get_cache(func, args):
+    # return get_cache_data(func.__name__, args, inspect.getsource(func))
+    return f_get_cache_data(func.__name__, args, inspect.getsource(func))
 
-    #Opening connection with database for current running process
-    CONN_DB = DB(os.path.join(".intpy", "intpy.db"))
-
-    c = get_cache_data(func.__name__, args, inspect.getsource(func))
-    if not _cache_exists(c):
-        debug("cache miss for {0}({1})".format(func.__name__, args))
-    else:
-        debug("cache hit for {0}({1})".format(func.__name__, args))
-        queue.put(c)
-
-    CONN_DB.closeConection()
-    ######print("CONSULTA AO BANCO {0}({1}) CONCLUÍDA!".format(func.__name__, args))
 
 def _cache_exists(cache):
     return cache is not None
@@ -33,14 +86,13 @@ def _cache_exists(cache):
 def _cache_data(func, fun_args, fun_return, elapsed_time):
     debug("starting caching data for {0}({1})".format(func.__name__, fun_args))
     start = time.perf_counter()
-    create_entry(func.__name__, fun_args, fun_return, inspect.getsource(func))
+    # create_entry(func.__name__, fun_args, fun_return, inspect.getsource(func))
+    f_create_entry(func.__name__, fun_args, fun_return, inspect.getsource(func))
     end = time.perf_counter()
     debug("caching {0} took {1}".format(func.__name__, end - start))
 
 
-def _execute_func(f, queue, method_args, method_kwargs, self=None,):
-    ######print("EXECUTANDO A FUNÇÃO {0}({1})...".format(f.__name__, method_args))
-    
+def _execute_func(f, self, *method_args, **method_kwargs):
     start = time.perf_counter()
     result_value = f(self, *method_args, **method_kwargs) if self is not None else f(*method_args, **method_kwargs)
     end = time.perf_counter()
@@ -49,36 +101,22 @@ def _execute_func(f, queue, method_args, method_kwargs, self=None,):
 
     debug("{0} took {1} to run".format(f.__name__, elapsed_time))
 
-    queue.put((result_value, elapsed_time))
+    return result_value, elapsed_time
 
-    ######print("EXECUÇÃO FUNÇÃO {0}({1}) CONCLUÍDA!".format(f.__name__, method_args))
 
 def _method_call(f):
     @wraps(f)
     def wrapper(self, *method_args, **method_kwargs):
         debug("calling {0}".format(f.__name__))
-        
-        queue = multiprocessing.Queue()
-        cacheSearchProcess = multiprocessing.Process(target=_get_cache, args=tuple([f, method_args, queue]))
-        cacheSearchProcess.start()
-        methodExecutionProcess = multiprocessing.Process(target=_execute_func, args=tuple([f, queue, method_args, method_kwargs, self]))
-        methodExecutionProcess.start()
-
-        processReturn = queue.get()
-        
-        ######print("processReturn:", processReturn)
-
-        if(isinstance(processReturn, tuple)):
-            cacheSearchProcess.terminate()
-            _cache_data(f, method_args, processReturn[0], processReturn[1])
-            return processReturn[0]
+        c = _get_cache(f, method_args)
+        if not _cache_exists(c):
+            debug("cache miss for {0}({1})".format(f.__name__, *method_args))
+            return_value, elapsed_time = _execute_func(f, self, *method_args, **method_kwargs)
+            _cache_data(f, method_args, return_value, elapsed_time)
+            return return_value
         else:
-            #In this case, the cacheSearchProcess executed faster than the methodExecutionProcess
-            #Stopping methodExecutionProcess
-            ######print("APAGANDO PROCESSO DA FUNÇÃO {0}({1})...".format(f.__name__, method_args))
-            methodExecutionProcess.terminate()
-        
-        return processReturn
+            debug("cache hit for {0}({1})".format(f.__name__, *method_args))
+            return c
 
     return wrapper
 
@@ -87,30 +125,18 @@ def _function_call(f):
     @wraps(f)
     def wrapper(*method_args, **method_kwargs):
         debug("calling {0}".format(f.__name__))
-
-        queue = multiprocessing.Queue()
-        cacheSearchProcess = multiprocessing.Process(target=_get_cache, args=tuple([f, method_args, queue]))
-        cacheSearchProcess.start()
-        functionExecutionProcess = multiprocessing.Process(target=_execute_func, args=tuple([f, queue, method_args, method_kwargs]))
-        functionExecutionProcess.start()
-
-        processReturn = queue.get()
-        
-        ######print("processReturn:", processReturn)
-
-        if(isinstance(processReturn, tuple)):
-            cacheSearchProcess.terminate()
-            _cache_data(f, method_args, processReturn[0], processReturn[1])
-            return processReturn[0]
+        c = _get_cache(f, method_args)
+        if not _cache_exists(c):
+            debug("cache miss for {0}({1})".format(f.__name__, *method_args))
+            return_value, elapsed_time = _execute_func(f, *method_args, **method_kwargs)
+            _cache_data(f, method_args, return_value, elapsed_time)
+            return return_value
         else:
-            #In this case, the cacheSearchProcess executed faster than the functionExecutionProcess
-            #Stopping functionExecutionProcess
-            ######print("APAGANDO PROCESSO DA FUNÇÃO {0}({1})...".format(f.__name__, method_args))
-            functionExecutionProcess.terminate()
-        
-        return processReturn
+            debug("cache hit for {0}({1})".format(f.__name__, *method_args))
+            return c
 
     return wrapper
+
 
 # obs
 def _is_method(f):
@@ -118,8 +144,9 @@ def _is_method(f):
     return bool(args and args[0] == 'self')
 
 
-PCACHE = str(sys.argv[-1])
-if PCACHE == "--no-cache":
+#PCACHE = str(sys.argv[-1])
+#if PCACHE == "--no-cache":
+if args.no_cache:
     def deterministic(f):
         return f
 else:
@@ -127,16 +154,22 @@ else:
         return _method_call(f) if _is_method(f) else _function_call(f)
 
 
-def save_cache():
-    saveNewDataDB()
+def salvarCache():
+    f_salvarNovosDadosBanco()
+    # salvarNovosDadosBanco()
+
 
 #On the decorator "initialize_intpy", "user_script_path" is declared
 #to maintain compatibility between different versions of IntPy
 def initialize_intpy(user_script_path):
     def decorator(f):
         def execution(*method_args, **method_kwargs):
+            #if len(sys.argv) < len(method_args)+2:
+                #print("Choose one IntPy's mechanism version")
+                #sys.exit()
             f(*method_args, **method_kwargs)
-            if PCACHE != "--no-cache":
-                save_cache()
+            #if PCACHE != "--no-cache":
+            if args.no_cache == False:
+                salvarCache()
         return execution
     return decorator

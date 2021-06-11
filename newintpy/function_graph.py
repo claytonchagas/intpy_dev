@@ -1,4 +1,149 @@
-import ast
+import ast, os, os.path
+
+def get_script_path(script_name, experiment_base_dir):
+    return os.path.join(experiment_base_dir, script_name)
+
+
+def is_an_user_defined_module(imported_module, experiment_base_dir):
+    return os.path.exists(get_script_path(imported_module, experiment_base_dir))
+
+
+def module_script_already_analized(imported_module, scripts_analized):
+    return imported_module in scripts_analized
+
+
+def import_command_to_imported_modules(import_command, script_name):
+    def module_name_to_module_path(module_name):
+        module_path = module_name[0]
+        for i in range(1, len(module_name), 1):
+            letter = module_name[i]
+            if((letter == "." and module_path[-1] != ".") or
+            (letter != "." and module_path[-1] == ".")):
+                module_path += os.sep + letter
+            else:
+                module_path += letter
+        module_path += ".py" if module_path[-1] != "." else os.sep + "__init__.py"
+        return os.path.normpath(os.path.join(os.path.dirname(script_name), module_path))
+
+    imported_modules = []
+    if(isinstance(import_command, ast.Import)):
+        for alias in import_command.names:
+            imported_modules.append(module_name_to_module_path(alias.name))
+
+    elif(isinstance(import_command, ast.ImportFrom)):
+        imported_module = import_command.level * "." + import_command.module if import_command.module is not None else import_command.level * "."
+        imported_modules.append(module_name_to_module_path(imported_module))
+        
+    return imported_modules
+
+
+def create_experiment_function_graph(user_script_path):
+    experiment_base_dir, user_script_name = os.path.split(user_script_path)
+    
+    scripts_analized = {}
+    scripts_to_be_analized = [user_script_name]
+    while(len(scripts_to_be_analized) > 0):
+
+        print("\n=============================================================================================================================================")
+        print("scripts_analized:", scripts_analized)
+        print("scripts_to_be_analized:", scripts_to_be_analized)
+        print("script_path:", get_script_path(scripts_to_be_analized[0], experiment_base_dir))
+
+
+
+        script_name = scripts_to_be_analized.pop(0)
+
+        script_ast = python_code_to_AST(get_script_path(script_name, experiment_base_dir))
+        if(script_ast is None):
+            raise RuntimeError
+
+        script_ASTSearcher = ASTSearcher(script_ast)
+        script_ASTSearcher.search()
+        
+        for import_command in script_ASTSearcher.import_commands:
+            imported_modules = import_command_to_imported_modules(import_command, script_name)
+
+
+            print("")
+            if isinstance(import_command, ast.Import):
+                print("ast.Import")
+                for alias in import_command.names:
+                    print("    alias.name = {0}".format(alias.name))
+                    print("    alias.asname = {0}\n".format(alias.asname))
+            if isinstance(import_command, ast.ImportFrom):
+                print("ast.ImportFrom")
+                print("    module = {0}".format(import_command.module))
+                print("    level = {0}".format(import_command.level))
+                for alias in import_command.names:
+                    print("    alias.name = {0}".format(alias.name))
+                    print("    alias.asname = {0}\n".format(alias.asname))
+            print("imported_modules:", imported_modules)
+            
+
+            
+            for imported_module in imported_modules:
+
+                print("")
+                print("imported_module:", imported_module)
+                print("is_an_user_defined_module:", is_an_user_defined_module(imported_module, experiment_base_dir))
+                print("module_script_already_analized:", module_script_already_analized(imported_module, scripts_analized))
+                print(get_script_path(imported_module, experiment_base_dir))
+
+
+
+                if(imported_module.find("newintpy") != -1):
+                    continue
+
+                if(is_an_user_defined_module(imported_module, experiment_base_dir) and
+                not module_script_already_analized(imported_module, scripts_analized)):
+                    scripts_to_be_analized.append(imported_module)
+        
+        scripts_analized[script_name] = script_ASTSearcher
+        """
+        scripts_analized[script_name] = Script(script_ASTSearcher.AST,
+                                        script_ASTSearcher.import_commands,
+                                        script_ASTSearcher.functions)
+        """    
+    #################MODIFICAR O GRAFO
+    experiment_scripts = []
+    for script_name in scripts_analized:
+        script_ASTSearcher = scripts_analized[script_name]
+        if(script_name == user_script_path):
+            script_name = "__main__"
+        experiment_scripts.append(Script(script_name, script_ASTSearcher.AST, script_ASTSearcher.import_commands, script_ASTSearcher.functions))
+    
+    experimentFunctionGraphCreator = ExperimentFunctionGraphCreator(experiment_scripts)
+    experimentFunctionGraphCreator.create_experiment_function_graph()
+    return experimentFunctionGraphCreator.function_graph
+
+    """
+    #########DEBUG###########
+    dictionary = function_class_method_searcher.functions
+    #dictionary.update(function_class_method_searcher.instance_methods)
+    #dictionary.update(function_class_method_searcher.class_methods)
+    print("dictionary:", dictionary)
+    USER_SCRIPT_GRAPH.print_graph(dictionary)
+
+    print("")
+    import ast
+    for comandoImport in function_class_method_searcher.imported_modules:
+        if isinstance(comandoImport, ast.Import):
+            print("ast.Import")
+            for alias in comandoImport.names:
+                print("    alias.name = {0}".format(alias.name))
+                print("    alias.asname = {0}\n".format(alias.asname))
+        
+        if isinstance(comandoImport, ast.ImportFrom):
+            print("ast.ImportFrom")
+            print("    module = {0}".format(comandoImport.module))
+            print("    level = {0}".format(comandoImport.level))
+            for alias in comandoImport.names:
+                print("    alias.name = {0}".format(alias.name))
+                print("    alias.asname = {0}\n".format(alias.asname))
+        
+    #########################
+    """
+
 
 def python_code_to_AST(file_name):
     try:
@@ -20,200 +165,126 @@ def python_code_to_AST(file_name):
             print("Check if your Python script is correctly writen.")
             return None
 
-class FunctionClassMethodSearcher(ast.NodeVisitor):
+
+class ASTSearcher(ast.NodeVisitor):
     def __init__(self, AST):
         self.__AST = AST
-        self.__imported_modules = []
+        self.__import_commands = []
         self.__functions = {}
 
-        """
-        self.__classes = []
-        self.__instance_methods = {}
-        self.__class_methods = {}
-
-        self.__super_functions = []
-        self.__super_classes = []
-        self.__super_methods = []
-        """
-
-    def search_for_functions_classes_and_methods(self):
-        #Finding all declared functions in the AST
-        """
-        self.__current_class = None
-        self.__current_class_name = ""
-        """
+    def search(self):
+        #Finding all declared functions and imported modules
+        #in the AST
 
         self.__current_function = None
         self.__current_function_name = ""
         self.visit(self.__AST)
 
     def visit_Import(self, node):
-        if(node not in self.__imported_modules):
-            self.__imported_modules.append(node)
+        if(node not in self.__import_commands):
+            self.__import_commands.append(node)
         self.generic_visit(node)
     
     def visit_ImportFrom(self, node):
-        if(node not in self.__imported_modules):
-            self.__imported_modules.append(node)
+        if(node not in self.__import_commands):
+            self.__import_commands.append(node)
         self.generic_visit(node)
     
     def visit_ClassDef(self, node):
-        #This function avoids that child nodes of ClassDef nodes
-        #(ex.: methods) be visited during search
-        """
-        previous_class_name = self.__current_class_name
-        if(self.__current_class_name == ""):
-            self.__current_class_name = node.name
-        else:
-            self.__current_class_name = self.__current_class_name + "." + node.name
+        """This function avoids that child nodes of a ClassDef node
+        (ex.: class methods) be visited during search"""
         
-        previous_class = self.__current_class
-        self.__current_class = node
-        
-        #Adding new class found to "self.__classes"
-        self.__classes.append(node)
-
-        for son_node in node.body:
-            
-            #Checking if "node" is a superclass
-            if isinstance(son_node, ast.ClassDef):
-                self.__super_classes.append(node)
-                break
-            
-            
-            if(isinstance(son_node, ast.FunctionDef)):
-                
-                #Checking if "son_node" is a supermethod
-                for element in son_node.body:
-                    if(isinstance(element, ast.FunctionDef)):
-                        self.__super_methods.append(son_node)
-                        break
-                
-
-                #Checking if "son_node" is an instance method or a class method
-                is_a_class_method = False
-                for decorator in son_node.decorator_list:
-                    if(decorator.id == "staticmethod"):
-                        is_a_class_method = True
-                        break
-                
-                method_name = self.__current_class_name + "." + son_node.name
-                if(is_a_class_method):
-                    self.__class_methods[method_name] = son_node
-                else:
-                    self.__instance_methods[method_name] = son_node
-        
-        self.generic_visit(node)
-
-        self.__current_class = previous_class
-        self.__current_class_name = previous_class_name
-        """
-    
     def visit_FunctionDef(self, node):
         previous_function_name = self.__current_function_name
-        if(self.__current_function_name == ""):
-            self.__current_function_name = node.name
-        else:
-            self.__current_function_name = self.__current_function_name + "." + node.name
-        
+        self.__current_function_name = node.name if self.__current_function_name == "" else self.__current_function_name + "." + node.name
         previous_function = self.__current_function
         self.__current_function = node
 
-        """
-        if(self.__current_class == None) or ((node not in self.__instance_methods.values()) and (node not in self.class_methods.values())):
-            #Adding new function found to "self.__functions"
-            function_name = ""
-            if(self.__current_class_name != ""):
-                function_name = self.__current_class_name + "." + self.__current_function_name
-            else:
-                function_name = self.__current_function_name
-        """
+
         self.__functions[self.__current_function_name] = node
 
-        """
-            #Checking if "node" is a superfunction
-            for son_node in node.body:
-                if isinstance(son_node, ast.FunctionDef):
-                    self.__super_functions.append(node)
-                    break
-        """
-
         self.generic_visit(node)
+
 
         self.__current_function = previous_function
         self.__current_function_name = previous_function_name
 
     @property
-    def imported_modules(self):
-        return self.__imported_modules
+    def AST(self):
+        return self.__AST
+
+    @property
+    def import_commands(self):
+        return self.__import_commands
 
     @property
     def functions(self):
         return self.__functions
 
-    """
-    @property
-    def classes(self):
-        return self.__classes
-    
-    @property
-    def instance_methods(self):
-        return self.__instance_methods
 
-    @property
-    def class_methods(self):
-        return self.__class_methods
-    
-    @property
-    def super_functions(self):
-        return self.__super_functions
-
-    @property
-    def super_classes(self):
-        return self.__super_classes  
-
-    @property
-    def super_methods(self):
-        return self.__super_methods
-    """
-
-class FunctionGraphCreator(ast.NodeVisitor):
-    """
-    def __init__(self, AST, functions, class_methods, instance_methods):
-        #The "AST" argument passed to this constructor must be the AST of the Python code
-        #The arguments "functions", "class_methods" and "instance_methods" must be dictionaries
-        #which keys must be strings representing the name of the functions/methods and the
-        #values must be the correspondents AST nodes
-    """
-    def __init__(self, AST, functions):
-        #The "AST" argument passed to this constructor must be the AST of the Python code
-        #The argument "functions" must be a dictionary which keys must be strings representing
-        #the name of the functions and the values must be the correspondents AST nodes
-
+class Script():
+    def __init__(self, name, AST, import_commands, functions):
+        self.__name = name
         self.__AST = AST
+        self.__import_commands = import_commands
         self.__functions = functions
-        """
-        self.__class_methods = class_methods
-        self.__instance_methods = instance_methods
-        """
 
-        self.__function_graph = Graph()
+    @property
+    def name(self):
+        return self.__name
 
-    def generate_function_graph(self):
-        #Inserting all functions in the function graph
+    @property
+    def AST(self):
+        return self.__AST
+
+    @property
+    def import_commands(self):
+        return self.__import_commands
+
+    @property
+    def functions(self):
+        return self.__functions
+
+
+def get_script(experiment_scripts, script_name):
+    for script in experiment_scripts:
+        if(script.name == script_name):
+            return script
+    return None
+
+
+class ExperimentFunctionGraphCreator(ast.NodeVisitor):
+    def __init__(self, experiment_scripts):
+        self.__experiment_scripts = experiment_scripts
+        self.__experiment_function_graph = Graph()
+
+    def create_experiment_function_graph(self):
+        self.__create_script_function_graph("__main__")
+
+    def __create_script_function_graph(self, script_name):
+        script = get_script(self.__experiment_scripts, script_name)
+        if(script is None):
+            raise RuntimeError("Un unexpected error occurred while trying to create the experiment function graph!")
+
+        function_graphs_of_imported_scripts = []
+        for import_command in script.import_commands:
+            imported_modules = import_command_to_imported_modules(import_command, script_name)
+            
+            for imported_module in imported_modules:
+                script_graph = self.__create_script_function_graph(imported_module)
+                
+
+
+
+
+
+
+
+
+
         for function in self.__functions.values():
             self.__function_graph.insert_vertice(GraphVertice(function))
         
-        """
-        for class_method in self.__class_methods.values():
-            self.__function_graph.insert_vertice(GraphVertice(class_method))
-
-        for instance_method in self.__instance_methods.values():
-            self.__function_graph.insert_vertice(GraphVertice(instance_method))
-
-        self.__current_class_name = ""
-        """
-
         self.__current_function_name = ""
         self.__current_function = None
         self.visit(self.__AST)

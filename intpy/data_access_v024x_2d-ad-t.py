@@ -28,38 +28,10 @@ def _get_id(fun_name, fun_args, fun_source):
 
 
 def get_cache_data(fun_name, fun_args, fun_source):
-<<<<<<< HEAD:intpy/data_access_v024x_2d-ad-t.py
-=======
-
-    ######print("NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
-    ######print("CACHED_DATA_DICTIONARY ANTES:", CACHED_DATA_DICTIONARY)
-    
-
->>>>>>> v0.2.5.x:intpy/data_access.py
     id = _get_id(fun_name, fun_args, fun_source)
     
-<<<<<<< HEAD:intpy/data_access_v024x_2d-ad-t.py
     #Checking if the result is saved in the cache
     with CACHED_DATA_DICTIONARY_SEMAPHORE:
-=======
-    else:
-        #Creating a select query to add to CACHED_DATA_DICTIONARY all data
-        #related to the function fun_name
-        list_file_names = _get(fun_name)
-        for file_name in list_file_names:
-            file_name = file_name[0].replace(".ipcache", "")
-            
-            result = deserialize(file_name)
-            if(result is None):
-                continue
-            else:
-                CACHED_DATA_DICTIONARY[file_name] = result
-
-        FUNCTIONS_ALREADY_SELECTED_FROM_DB.append(fun_name)
-
-        ######print("CACHED_DATA_DICTIONARY DEPOIS:", CACHED_DATA_DICTIONARY)
-
->>>>>>> v0.2.5.x:intpy/data_access.py
         if(id in CACHED_DATA_DICTIONARY):
             return CACHED_DATA_DICTIONARY[id]
 

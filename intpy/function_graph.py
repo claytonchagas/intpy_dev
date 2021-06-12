@@ -75,6 +75,47 @@ class Script():
                 user_defined_imported_scripts.append(imported_script)
         return user_defined_imported_scripts
 
+    #
+    def get_import_command_of_function(self, function_name):
+        for import_command in self.__import_commands:
+            if(isinstance(import_command, ast.ImportFrom)):
+                for alias in import_command.names:
+                    function_imported_name = alias.asname if alias.asname is not None else alias.name
+                    if(function_imported_name == function_name):
+                        return import_command
+        return None
+
+    #
+    def get_original_name_of_function_imported_with_import_from(self, import_from_command, function_name):
+        for alias in import_from_command.names:
+            function_imported_name = alias.asname if alias.asname is not None else alias.name
+            if(function_imported_name == function_name):
+                return alias.name
+        return None
+
+    #
+    def get_function(self, function_name):
+        if(function_name in self.__functions):
+            return self.__functions[function_name]
+        return None
+
+
+    def get_function_imported_with_import_from(self, function_called_name):
+        import_command = self.get_import_command_of_function(function_called_name)
+        if(import_command is None):
+            return None
+        
+        imported_script_name = self.import_command_to_imported_scripts_names(import_command)
+        imported_script = self.__experiment.scripts[imported_script_name]
+        
+        for vertice in self.__experiment.scripts[imported_script_name].function_graph.vertices():
+            pass
+        
+        functions_imported = self.__current_script.get_functions_imported_with_import_from()
+        if function_called_name in functions_imported:
+            possible_functions_called.append(functions_imported[function_called_name])
+
+
     def get_imported_module_where_function_name_is_defined(self, function_name):
         for import_command in self.__import_commands:
             if(isinstance(import_command, ast.ImportFrom)):
@@ -356,12 +397,13 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
         for script_name in user_defined_imported_scripts:
             dictionary.update(self.__experiment.scripts[script_name].functions)
         dictionary.update(script.functions)
+        self.__dictionary = dictionary
         self.__script_function_graph.print_graph(dictionary)
 
         self.__current_script = script
         self.__current_function_name = ""
         self.__current_function = None
-        #self.visit(script.AST)
+        self.visit(script.AST)
         
         script.function_graph = self.__script_function_graph
         
@@ -393,24 +435,46 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
         #############RIGHT NOW, find_possible_functions_called AND find_function_called
         ##############ARE ONLY CONSIDERING FUNCTIONS DEFINED BY THE USER IN THE FILE
         def find_possible_functions_called(function_called_name):
+
+            print("function_called_name:", function_called_name)
+
             possible_functions_called = []
             if(function_called_name.find(".") == -1):
                 for function in self.__current_script.functions.values():
                     if(function.name == function_called_name):
                         possible_functions_called.append(function)
+                                
+                import_command = self.__current_script.get_import_command_of_function(function_called_name)
+                if(import_command is None):
+
+                    print("possible_functions_called:")
+                    for function in possible_functions_called:
+                        for key in self.__dictionary:
+                            if(self.__dictionary[key] == function):
+                                print(key)
+
+                    return possible_functions_called
+
+                imported_script_name = self.__current_script.import_command_to_imported_scripts_names(import_command)[0]
+                if(not is_an_user_defined_script(imported_script_name, self.__experiment.experiment_base_dir)):
+                    
+                    print("possible_functions_called:")
+                    for function in possible_functions_called:
+                        for key in self.__dictionary:
+                            if(self.__dictionary[key] == function):
+                                print(key)
+                    
+                    return possible_functions_called
                 
-                imported_script = self.__current_script.get_imported_module_where_function_name_is_defined(function_called_name)
-                for vertice in self.__experiment.scripts[imported_script].function_graph.vertices():
-                    pass
+                original_imported_function_name = self.__current_script.get_original_name_of_function_imported_with_import_from(import_command, function_called_name)
+                possible_functions_called.append(self.__experiment.scripts[imported_script_name].get_function(original_imported_function_name))
                 
-                functions_imported = self.__current_script.get_functions_imported_with_import_from()
-                if function_called_name in functions_imported:
-                    possible_functions_called.append(functions_imported[function_called_name])
+            """
             else:
                 functions_imported = self.__current_script.get_functions_imported_with_import()
                 if function_called_name in functions_imported:
                     possible_functions_called.append(functions_imported[function_called_name])
-
+            """
             """
                 OLD IMPLEMENTATION:
                 for function_name in self.__current_script.functions:
@@ -425,7 +489,9 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
 
             print("possible_functions_called:")
             for function in possible_functions_called:
-                print(function.qualname)
+                for key in self.__dictionary:
+                    if(self.__dictionary[key] == function):
+                        print(key)
 
             #return possible_functions_called
         
@@ -461,13 +527,13 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
             
             if(isinstance(node.func, ast.Name)):
                 #In this case the function called can be either a function imported
-                #with the command "from ... import ..." or a function declared by the
+                #with the command "from ... im  port ..." or a function declared by the
                 #user in the file
 
                 function_called_name = node.func.id
                 possible_functions_called = find_possible_functions_called(function_called_name)
-                function_called = find_function_called(function_called_name, possible_functions_called)
-                
+                #############function_called = find_function_called(function_called_name, possible_functions_called)
+            """
             elif(isinstance(node.func, ast.Attribute)):
                 #In this case the function called is a function imported with the command
                 #"import ..."
@@ -485,19 +551,12 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
 
                 possible_functions_called = find_possible_functions_called(function_called_name)
                 function_called = find_function_called(function_called_name, possible_functions_called)
-            
-            #Testing if the function called is one of the functions declared by the user
+            """
             if(function_called != None):
-                #Inserting "function_called" in function graph
                 function_called_graph_vertice = self.__script_function_graph.search_vertice(function_called)
                 current_function_graph_vertice = self.__script_function_graph.search_vertice(self.__current_function)
-                
-                ##############CHECK IF THIS CONDITIONAL IS NECESSARY
-                if(function_called_graph_vertice == None or current_function_graph_vertice == None):
-                    raise RuntimeError("Internal error!")
-                else:
-                    current_function_graph_vertice.insert_link(function_called_graph_vertice)
-        
+                current_function_graph_vertice.insert_link(function_called_graph_vertice)
+
         self.generic_visit(node)
     
     @property

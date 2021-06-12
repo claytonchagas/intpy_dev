@@ -1,150 +1,228 @@
 import ast, os, os.path
 
-def get_script_path(script_name, experiment_base_dir):
-    return os.path.join(experiment_base_dir, script_name)
+class Experiment():
+    def __init__(self, experiment_base_dir):
+        self.__experiment_base_dir = experiment_base_dir
+        self.__scripts = {}
+    
+    def add_script(self, script):
+        self.__scripts[script.name] = script
+    
+    #####DEBUG#####
+    def print(self):
+        print("###EXPERIMENT###")
+        print("experiment_base_dir:", self.__experiment_base_dir)
+        print("scripts:")
+        for script in self.__scripts.values():
+            script.print()
+
+    @property
+    def experiment_base_dir(self):
+        return self.__experiment_base_dir
+    
+    @property
+    def scripts(self):
+        return self.__scripts
 
 
-def is_an_user_defined_module(imported_module, experiment_base_dir):
-    return os.path.exists(get_script_path(imported_module, experiment_base_dir))
+class Script():
+    #
+    def __init__(self, name = "", AST = None, import_commands = set(), functions = {}, function_graph = None):
+        self.__name = name
+        self.__AST = AST
+        self.__import_commands = import_commands
+        self.__functions = functions
+        self.__function_graph = function_graph
+
+    #
+    def import_command_to_imported_scripts_names(self, import_command):
+        def script_name_to_script_path(script_name):
+            script_path = script_name[0]
+            for i in range(1, len(script_name), 1):
+                letter = script_name[i]
+                if((letter == "." and script_path[-1] != ".") or
+                (letter != "." and script_path[-1] == ".")):
+                    script_path += os.sep + letter
+                else:
+                    script_path += letter
+            script_path += ".py" if script_path[-1] != "." else os.sep + "__init__.py"
+            return os.path.normpath(os.path.join(os.path.dirname(self.__name), script_path))
+
+        imported_scripts_names = []
+        if(isinstance(import_command, ast.Import)):
+            for alias in import_command.names:
+                imported_scripts_names.append(script_name_to_script_path(alias.name))
+
+        elif(isinstance(import_command, ast.ImportFrom)):
+            imported_script_name = import_command.level * "." + import_command.module if import_command.module is not None else import_command.level * "."
+            imported_scripts_names.append(script_name_to_script_path(imported_script_name))
+            
+        return imported_scripts_names
+
+    #
+    def get_imported_scripts(self):
+        imported_scripts = []
+        for import_command in self.__import_commands:
+            imported_scripts += self.import_command_to_imported_scripts_names(import_command)
+        return imported_scripts
+
+    def get_user_defined_modules(self, experiment_base_dir):
+        imported_modules = self.get_imported_modules()
+        user_defined_modules = []
+        for imported_module in imported_modules:
+            if is_an_user_defined_module(imported_module, experiment_base_dir):
+                user_defined_modules.append(imported_module)
+        return user_defined_modules
+
+    def get_imported_module_where_function_name_is_defined(self, function_name):
+        for import_command in self.__import_commands:
+            if(isinstance(import_command, ast.ImportFrom)):
+                for alias in import_command.names:
+                    function_imported_name = alias.asname if alias.asname is not None else alias.name
+                    if(function_imported_name == function_name):
+                        return self.import_command_to_imported_scripts_names(import_command)
+        return None
+                    
+
+    def get_functions_imported_with_import_from(self):
+        functions_imported = {}
+        for import_command in self.__import_commands:
+            if(isinstance(import_command, ast.ImportFrom)):
+                for alias in import_command.names:
+                    function_imported_name = alias.asname if alias.asname is not None else alias.name
+                    
+
+    def get_functions_imported_with_import(self):
+        functions_imported = {}
+        for import_command in self.__import_commands:
+            if(isinstance(import_command, ast.Import)):
+                for alias in import_command.names:
+                    function_imported_name = alias.asname if alias.asname is not None else alias.name
 
 
-def module_script_already_analized(imported_module, scripts_analized):
-    return imported_module in scripts_analized
+    ###DEBUG####
+    def print(self):
+        print("#####SCRIPT#####")
+        print("Name:", self.__name)
+        print("AST:", self.__AST)
+        print("Import Commands:", self.__import_commands)
+        print("Functions:", self.__functions)
+        print("Function Graph:", None if self.__function_graph is None else self.__function_graph.print_graph())
 
 
-def import_command_to_imported_modules(import_command, script_name):
-    def module_name_to_module_path(module_name):
-        module_path = module_name[0]
-        for i in range(1, len(module_name), 1):
-            letter = module_name[i]
-            if((letter == "." and module_path[-1] != ".") or
-            (letter != "." and module_path[-1] == ".")):
-                module_path += os.sep + letter
-            else:
-                module_path += letter
-        module_path += ".py" if module_path[-1] != "." else os.sep + "__init__.py"
-        return os.path.normpath(os.path.join(os.path.dirname(script_name), module_path))
+    @property
+    def name(self):
+        return self.__name
+    
+    @name.setter
+    def name(self, name):
+        self.__name = name
 
-    imported_modules = []
-    if(isinstance(import_command, ast.Import)):
-        for alias in import_command.names:
-            imported_modules.append(module_name_to_module_path(alias.name))
+    @property
+    def AST(self):
+        return self.__AST
+    
+    @AST.setter
+    def AST(self, AST):
+        self.__AST = AST
 
-    elif(isinstance(import_command, ast.ImportFrom)):
-        imported_module = import_command.level * "." + import_command.module if import_command.module is not None else import_command.level * "."
-        imported_modules.append(module_name_to_module_path(imported_module))
-        
-    return imported_modules
+    @property
+    def import_commands(self):
+        return self.__import_commands
+    
+    @import_commands.setter
+    def import_commands(self, import_commands):
+        self.__import_commands = import_commands
+
+    @property
+    def functions(self):
+        return self.__functions
+
+    @functions.setter
+    def functions(self, functions):
+        self.__functions = functions
+    
+    @property
+    def function_graph(self):
+        return self.__function_graph
+ 
+    @function_graph.setter
+    def function_graph(self, function_graph):
+        self.__function_graph = function_graph
 
 
 def create_experiment_function_graph(user_script_path):
+    def script_already_analized(script):
+        return script in scripts_analized
+
     experiment_base_dir, user_script_name = os.path.split(user_script_path)
     
+    experiment = Experiment(experiment_base_dir)
     scripts_analized = {}
     scripts_to_be_analized = [user_script_name]
     while(len(scripts_to_be_analized) > 0):
+        script_name = scripts_to_be_analized.pop(0)
+        
+        script_AST = python_code_to_AST(get_script_path(script_name, experiment_base_dir))
+        if(script_AST is None):
+            raise RuntimeError
 
+        script_ASTSearcher = ASTSearcher(script_AST)
+        script_ASTSearcher.search()
+
+        if(script_name == user_script_name):
+            script_name = "__main__"
+        script = Script(script_name, script_AST, script_ASTSearcher.import_commands, script_ASTSearcher.functions)
+        experiment.add_script(script)
+
+
+        imported_scripts = script.get_imported_scripts()
+        
         print("\n=============================================================================================================================================")
         print("scripts_analized:", scripts_analized)
         print("scripts_to_be_analized:", scripts_to_be_analized)
-        print("script_path:", get_script_path(scripts_to_be_analized[0], experiment_base_dir))
-
-
-
-        script_name = scripts_to_be_analized.pop(0)
-
-        script_ast = python_code_to_AST(get_script_path(script_name, experiment_base_dir))
-        if(script_ast is None):
-            raise RuntimeError
-
-        script_ASTSearcher = ASTSearcher(script_ast)
-        script_ASTSearcher.search()
+        print("script_path:", get_script_path(script.name, experiment_base_dir))
+        print("imported_scripts:", imported_scripts)
         
-        for import_command in script_ASTSearcher.import_commands:
-            imported_modules = import_command_to_imported_modules(import_command, script_name)
-
+        for imported_script in imported_scripts:
 
             print("")
-            if isinstance(import_command, ast.Import):
-                print("ast.Import")
-                for alias in import_command.names:
-                    print("    alias.name = {0}".format(alias.name))
-                    print("    alias.asname = {0}\n".format(alias.asname))
-            if isinstance(import_command, ast.ImportFrom):
-                print("ast.ImportFrom")
-                print("    module = {0}".format(import_command.module))
-                print("    level = {0}".format(import_command.level))
-                for alias in import_command.names:
-                    print("    alias.name = {0}".format(alias.name))
-                    print("    alias.asname = {0}\n".format(alias.asname))
-            print("imported_modules:", imported_modules)
-            
+            print("imported_script:", imported_script)
+            print("is_an_user_defined_script:", is_an_user_defined_script(imported_script, experiment_base_dir))
+            print("module_script_already_analized:", script_already_analized(imported_script))
+            print(get_script_path(imported_script, experiment_base_dir))
 
-            
-            for imported_module in imported_modules:
-
-                print("")
-                print("imported_module:", imported_module)
-                print("is_an_user_defined_module:", is_an_user_defined_module(imported_module, experiment_base_dir))
-                print("module_script_already_analized:", module_script_already_analized(imported_module, scripts_analized))
-                print(get_script_path(imported_module, experiment_base_dir))
-
-
-
-                if(imported_module.find("newintpy") != -1):
-                    continue
-
-                if(is_an_user_defined_module(imported_module, experiment_base_dir) and
-                not module_script_already_analized(imported_module, scripts_analized)):
-                    scripts_to_be_analized.append(imported_module)
-        
+            if(is_an_user_defined_script(imported_script, experiment_base_dir) and
+            not script_already_analized(imported_script)):
+                scripts_to_be_analized.append(imported_script)
+    
         scripts_analized[script_name] = script_ASTSearcher
-        """
-        scripts_analized[script_name] = Script(script_ASTSearcher.AST,
-                                        script_ASTSearcher.import_commands,
-                                        script_ASTSearcher.functions)
-        """    
+    
+    
+    print("\n\n\n")
+    experiment.print()
+    print("\n\n\n")        
+
+    """
     #################MODIFICAR O GRAFO
-    experiment_scripts = []
+    user_experiment = Experiment(experiment_base_dir)
     for script_name in scripts_analized:
         script_ASTSearcher = scripts_analized[script_name]
-        if(script_name == user_script_path):
+        if(script_name == user_script_name):
             script_name = "__main__"
-        experiment_scripts.append(Script(script_name, script_ASTSearcher.AST, script_ASTSearcher.import_commands, script_ASTSearcher.functions))
-    
-    experimentFunctionGraphCreator = ExperimentFunctionGraphCreator(experiment_scripts)
+        
+        for function_name in script_ASTSearcher.functions:
+            function = script_ASTSearcher.functions[function_name]
+            function.qualname = function_name
+        
+        user_experiment.add_script(Script(script_name, script_ASTSearcher.AST, script_ASTSearcher.import_commands, script_ASTSearcher.functions))
+
+    experimentFunctionGraphCreator = ExperimentFunctionGraphCreator(user_experiment)
     experimentFunctionGraphCreator.create_experiment_function_graph()
-    return experimentFunctionGraphCreator.function_graph
-
+    return experimentFunctionGraphCreator.experiment_function_graph
     """
-    #########DEBUG###########
-    dictionary = function_class_method_searcher.functions
-    #dictionary.update(function_class_method_searcher.instance_methods)
-    #dictionary.update(function_class_method_searcher.class_methods)
-    print("dictionary:", dictionary)
-    USER_SCRIPT_GRAPH.print_graph(dictionary)
-
-    print("")
-    import ast
-    for comandoImport in function_class_method_searcher.imported_modules:
-        if isinstance(comandoImport, ast.Import):
-            print("ast.Import")
-            for alias in comandoImport.names:
-                print("    alias.name = {0}".format(alias.name))
-                print("    alias.asname = {0}\n".format(alias.asname))
-        
-        if isinstance(comandoImport, ast.ImportFrom):
-            print("ast.ImportFrom")
-            print("    module = {0}".format(comandoImport.module))
-            print("    level = {0}".format(comandoImport.level))
-            for alias in comandoImport.names:
-                print("    alias.name = {0}".format(alias.name))
-                print("    alias.asname = {0}\n".format(alias.asname))
-        
-    #########################
-    """
-
-
+    
+#
 def python_code_to_AST(file_name):
     try:
         #Opening file
@@ -165,6 +243,13 @@ def python_code_to_AST(file_name):
             print("Check if your Python script is correctly writen.")
             return None
 
+#
+def get_script_path(script_name, experiment_base_dir):
+    return os.path.join(experiment_base_dir, script_name)
+
+#
+def is_an_user_defined_script(imported_script, experiment_base_dir):
+    return os.path.exists(get_script_path(imported_script, experiment_base_dir)) and imported_script.find("intpy") == -1
 
 class ASTSearcher(ast.NodeVisitor):
     def __init__(self, AST):
@@ -222,95 +307,79 @@ class ASTSearcher(ast.NodeVisitor):
         return self.__functions
 
 
-class Script():
-    def __init__(self, name, AST, import_commands, functions):
-        self.__name = name
-        self.__AST = AST
-        self.__import_commands = import_commands
-        self.__functions = functions
-
-    @property
-    def name(self):
-        return self.__name
-
-    @property
-    def AST(self):
-        return self.__AST
-
-    @property
-    def import_commands(self):
-        return self.__import_commands
-
-    @property
-    def functions(self):
-        return self.__functions
-
-
-def get_script(experiment_scripts, script_name):
-    for script in experiment_scripts:
-        if(script.name == script_name):
-            return script
-    return None
 
 
 class ExperimentFunctionGraphCreator(ast.NodeVisitor):
-    def __init__(self, experiment_scripts):
-        self.__experiment_scripts = experiment_scripts
-        self.__experiment_function_graph = Graph()
+    def __init__(self, experiment):
+        self.__experiment = experiment
+        self.__experiment_function_graph = None
+
+
+    def __initialize_script_function_graph(self, script, imported_scripts_name):
+        script_function_graph = Graph()
+        
+        list_of_vertices = []
+        for imported_script_name in imported_scripts_name:
+            list_of_vertices += self.__experiment.scripts[imported_script_name].function_graph.vertices
+        
+        for vertice in list_of_vertices:
+            script_function_graph.insert_vertice(vertice)
+        for function in script.functions.values():
+            script_function_graph.insert_vertice(GraphVertice(function))
+
+        return script_function_graph
+
 
     def create_experiment_function_graph(self):
-        self.__create_script_function_graph("__main__")
+        self.__experiment_function_graph = self.__create_script_function_graph("__main__")
+
+
+    def __create_imported_scripts_function_graph(self, imported_scripts):
+        for imported_script in imported_scripts:
+            self.__create_script_function_graph(imported_script)
+
 
     def __create_script_function_graph(self, script_name):
-        script = get_script(self.__experiment_scripts, script_name)
-        if(script is None):
-            raise RuntimeError("Un unexpected error occurred while trying to create the experiment function graph!")
-
-        function_graphs_of_imported_scripts = []
-        for import_command in script.import_commands:
-            imported_modules = import_command_to_imported_modules(import_command, script_name)
-            
-            for imported_module in imported_modules:
-                script_graph = self.__create_script_function_graph(imported_module)
-                
-
-
-
-
-
-
-
-
-
-        for function in self.__functions.values():
-            self.__function_graph.insert_vertice(GraphVertice(function))
+        #try:
         
+
+        print("SCRIPT BEING CREATED: ", script_name)
+        script = self.__experiment.scripts[script_name]
+
+        imported_scripts = script.get_user_defined_modules(self.__experiment.experiment_base_dir)
+        
+        print("IMPORTED SCRIPTS: ", imported_scripts)
+        
+        self.__create_imported_scripts_function_graph(imported_scripts)
+
+        self.__script_function_graph = self.__initialize_script_function_graph(script, imported_scripts)
+        
+        print("REMEMBER SCRIPT BEING CREATED: ", script_name)
+        print("GRAPH INITIALIZED:")
+        self.__script_function_graph.print_graph()
+
+        self.__current_script = script
         self.__current_function_name = ""
         self.__current_function = None
-        self.visit(self.__AST)
+        self.visit(script.AST)
+        
+        script.function_graph = self.__script_function_graph
+        
+        print("GRAPH COMPLETED:")
+        self.__script_function_graph.print_graph()
+
+        #except Exception:
+        #   raise RuntimeError("Un unexpected error occurred while trying to create the experiment function graph!")
+
 
     def visit_ClassDef(self, node):
-        #This function avoids that child nodes of ClassDef nodes
-        #(ex.: methods) be visited during the graph creation
-        """
-        previous_class_name = self.__current_class_name
-        if(self.__current_class_name != ""):
-            self.__current_class_name = self.__current_class_name + "." + node.name
-        else:
-            self.__current_class_name = node.name
-
-        self.generic_visit(node)
-
-        self.__current_class_name = previous_class_name
-        """
+        """This function avoids that child nodes of a ClassDef node
+        (ex.: class methods) be visited during search"""
+        
 
     def visit_FunctionDef(self, node):
         previous_function_name = self.__current_function_name
-        if(self.__current_function_name != ""):
-            self.__current_function_name = self.__current_function_name + "." + node.name
-        else:
-            self.__current_function_name = node.name
-        
+        self.__current_function_name = node.name if self.__current_function_name == "" else self.__current_function_name + "." + node.name
         previous_function = self.__current_function
         self.__current_function = node
 
@@ -318,68 +387,90 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
 
         self.__current_function_name = previous_function_name
         self.__current_function = previous_function
-
+    
+    
     def visit_Call(self, node):
+        #############RIGHT NOW, find_possible_functions_called AND find_function_called
+        ##############ARE ONLY CONSIDERING FUNCTIONS DEFINED BY THE USER IN THE FILE
+        def find_possible_functions_called(function_called_name):
+            possible_functions_called = []
+            if(function_called_name.find(".") == -1):
+                for function in self.__current_script.functions.values():
+                    if(function.name == function_called_name):
+                        possible_functions_called.append(function)
+                
+                imported_script = self.__current_script.get_imported_module_where_function_name_is_defined(function_called_name)
+                for vertice in self.__experiment.scripts[imported_script].function_graph.vertices():
+                    pass
+                
+                functions_imported = self.__current_script.get_functions_imported_with_import_from()
+                if function_called_name in functions_imported:
+                    possible_functions_called.append(functions_imported[function_called_name])
+            else:
+                functions_imported = self.__current_script.get_functions_imported_with_import()
+                if function_called_name in functions_imported:
+                    possible_functions_called.append(functions_imported[function_called_name])
+
+            """
+                OLD IMPLEMENTATION:
+                for function_name in self.__current_script.functions:
+                    if(function_name.split(".")[-1] == function_called_name):
+                        possible_functions_called.append(function_name)
+                
+                NEW IMPLEMENTATION:
+                for vertice in self.__script_function_graph.vertices:
+                    if(vertice.data.name == function_called_name):
+                        possible_functions_called.append(vertice.data)
+            """
+
+            print("possible_functions_called:")
+            for function in possible_functions_called:
+                print(function.qualname)
+
+            #return possible_functions_called
+        
+        def find_function_called(function_called_name, possible_functions_called):
+            if(len(possible_functions_called) >= 1):
+                #Finding function defined in the smaller scope
+                function_called = None
+                function_called_name_prefix = self.__current_function_name + "."
+                while(function_called == None):
+                    for possible_function_called in possible_functions_called:
+                        if(function_called_name_prefix + function_called_name == possible_function_called):
+                            function_called = self.__current_script.functions[possible_function_called]
+                            break
+                    
+                    if(function_called_name_prefix == ""):
+                        break
+
+                    #The string in "function_called_name_prefix" always ends in a dot (".")
+                    #Hence, the last element of "function_called_name_prefix.split('.')" will
+                    #always be a blank string ("")
+                    if(len(function_called_name_prefix.split(".")) > 2):
+                        function_called_name_prefix = function_called_name_prefix.split(".")
+                        function_called_name_prefix.pop(-2)
+                        function_called_name_prefix = ".".join(function_called_name_prefix)
+                    else:
+                        function_called_name_prefix = ""
+                
+                return function_called
+        
         #Testing if this node represents a call to some function done inside another function
         if(self.__current_function_name != ""):
             function_called = None
             
             if(isinstance(node.func, ast.Name)):
-                #In this case the function called can be either a function imported from a module
-                #or a function declared by the user in the file
+                #In this case the function called can be either a function imported
+                #with the command "from ... import ..." or a function declared by the
+                #user in the file
 
                 function_called_name = node.func.id
+                possible_functions_called = find_possible_functions_called(function_called_name)
+                function_called = find_function_called(function_called_name, possible_functions_called)
                 
-                #Finding possible functions (declared by the user) being called
-                possible_functions_called = []
-                for function_name in self.__functions:
-                    if(function_name.split(".")[-1] == function_called_name):
-                        possible_functions_called.append(function_name)
-
-                if(len(possible_functions_called) >= 1):
-                    #Finding function defined in the smaller scope
-                    """
-                    function_called_name_prefix = ""
-                    
-                    if(self.__current_class_name != ""):
-                        function_called_name_prefix = self.__current_class_name + "." + self.__current_function_name + "."
-                    else:
-                    """
-                    function_called_name_prefix = self.__current_function_name + "."
-                    
-                    while(function_called == None):
-
-                        for possible_function_called in possible_functions_called:
-                            if(function_called_name_prefix + function_called_name == possible_function_called):
-                                function_called = self.__functions[possible_function_called]
-                                break
-                        
-                        if(function_called_name_prefix == ""):
-                            break
-
-                        #The string in "function_called_name_prefix" always ends in a dot (".")
-                        #Hence, the last element of "function_called_name_prefix.split('.')" will
-                        #always be a blank string ("")
-                        if(len(function_called_name_prefix.split(".")) > 2):
-                            function_called_name_prefix = function_called_name_prefix.split(".")
-                            function_called_name_prefix.pop(-2)
-                            function_called_name_prefix = ".".join(function_called_name_prefix)
-                        else:
-                            function_called_name_prefix = ""
-                        
-                        """
-                        if(self.__current_class_name != ""):
-                            #Testing if (function_called_name_prefix = self.__current_class_name + ".")
-                            #In this case function_called_name_prefix must be an empty string because
-                            #to call a method of a class it is necessary to use the strucutre
-                            #self.instance_method() or ClassName.class_method() and in both cases node.func
-                            #is not an instance of ast.Name
-                            if(len(function_called_name_prefix) == len(self.__current_class_name) + 1 ):
-                                function_called_name_prefix = ""
-                        """
-            """
             elif(isinstance(node.func, ast.Attribute)):
-                #In this case the function called is a function imported from a module
+                #In this case the function called is a function imported with the command
+                #"import ..."
 
                 #Building the name of the function called
                 current_node = node.func
@@ -391,30 +482,15 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
 
                 function_called_name_parts.reverse()
                 function_called_name = ".".join(function_called_name_parts)
-                
-                
-                #Testing if the function called is an instance method
-                if(function_called_name[0] == "self"):
-                    #Removing "self." from the name of the instance method
-                    function_called_name = ".".join(function_called_name_parts[1:])
-                    
-                    for instance_method_name in self.__instance_methods:
-                        if(self.__current_class_name + "." + function_called_name == instance_method_name):
-                            function_called = self.__instance_methods[instance_method_name]
-                            break
-                else:
-                    #In this case, the function called is a class method
-                    for class_method_name in self.__class_methods:
-                        if(function_called_name == class_method_name):
-                            function_called = self.__class_methods[class_method_name]
-                            break
-            """
 
+                possible_functions_called = find_possible_functions_called(function_called_name)
+                function_called = find_function_called(function_called_name, possible_functions_called)
+            
             #Testing if the function called is one of the functions declared by the user
             if(function_called != None):
                 #Inserting "function_called" in function graph
-                function_called_graph_vertice = self.__function_graph.search_vertice(function_called)
-                current_function_graph_vertice = self.__function_graph.search_vertice(self.__current_function)
+                function_called_graph_vertice = self.__script_function_graph.search_vertice(function_called)
+                current_function_graph_vertice = self.__script_function_graph.search_vertice(self.__current_function)
                 
                 ##############CHECK IF THIS CONDITIONAL IS NECESSARY
                 if(function_called_graph_vertice == None or current_function_graph_vertice == None):
@@ -425,8 +501,8 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
         self.generic_visit(node)
     
     @property
-    def function_graph(self):
-        return self.__function_graph
+    def experiment_function_graph(self):
+        return self.__experiment_function_graph
 
 class Graph():
     def __init__(self):
@@ -451,7 +527,7 @@ class Graph():
         return self.__vertices
 
     ############DEBUG#############
-    def print_graph(self, d):
+    def print_graph(self, d={}):
         for vertice in self.__vertices:
             vertice.print_graph_vertice(d)
 
@@ -476,7 +552,8 @@ class GraphVertice():
         return self.__linked_vertices
 
     ##########DEBUG#############
-    def print_graph_vertice(self, d):
+    def print_graph_vertice(self, d = {}):
+        """
         for e in d:
             if(self.data == d[e]):
                 print("Graph Vertice:", e)
@@ -484,6 +561,10 @@ class GraphVertice():
             for e in d:
                 if(linked_vertice.__data == d[e]):
                     print("    Linked Vertice:", e)
+        """
+        print("Graph Vertice:", self.data.qualname)
+        for linked_vertice in self.__linked_vertices:
+            print("    Linked Vertice:", linked_vertice.__data.qualname)
 
 def get_source_code_executed(function, function_graph):
     list_of_graph_vertices_not_yet_processed = []

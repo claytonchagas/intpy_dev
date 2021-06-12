@@ -66,13 +66,14 @@ class Script():
             imported_scripts += self.import_command_to_imported_scripts_names(import_command)
         return imported_scripts
 
-    def get_user_defined_modules(self, experiment_base_dir):
-        imported_modules = self.get_imported_modules()
-        user_defined_modules = []
-        for imported_module in imported_modules:
-            if is_an_user_defined_module(imported_module, experiment_base_dir):
-                user_defined_modules.append(imported_module)
-        return user_defined_modules
+    #
+    def get_user_defined_imported_scripts(self, experiment_base_dir):
+        imported_scripts = self.get_imported_scripts()
+        user_defined_imported_scripts = []
+        for imported_script in imported_scripts:
+            if is_an_user_defined_script(imported_script, experiment_base_dir):
+                user_defined_imported_scripts.append(imported_script)
+        return user_defined_imported_scripts
 
     def get_imported_module_where_function_name_is_defined(self, function_name):
         for import_command in self.__import_commands:
@@ -208,19 +209,16 @@ def create_experiment_function_graph(user_script_path):
     user_experiment = Experiment(experiment_base_dir)
     for script_name in scripts_analized:
         script_ASTSearcher = scripts_analized[script_name]
-        if(script_name == user_script_name):
-            script_name = "__main__"
         
         for function_name in script_ASTSearcher.functions:
             function = script_ASTSearcher.functions[function_name]
             function.qualname = function_name
         
         user_experiment.add_script(Script(script_name, script_ASTSearcher.AST, script_ASTSearcher.import_commands, script_ASTSearcher.functions))
-
-    experimentFunctionGraphCreator = ExperimentFunctionGraphCreator(user_experiment)
-    experimentFunctionGraphCreator.create_experiment_function_graph()
-    return experimentFunctionGraphCreator.experiment_function_graph
     """
+    experimentFunctionGraphCreator = ExperimentFunctionGraphCreator(experiment)
+    experimentFunctionGraphCreator.create_experiment_function_graph()
+    #return experimentFunctionGraphCreator.experiment_function_graph
     
 #
 def python_code_to_AST(file_name):
@@ -250,6 +248,7 @@ def get_script_path(script_name, experiment_base_dir):
 #
 def is_an_user_defined_script(imported_script, experiment_base_dir):
     return os.path.exists(get_script_path(imported_script, experiment_base_dir)) and imported_script.find("intpy") == -1
+
 
 class ASTSearcher(ast.NodeVisitor):
     def __init__(self, AST):
@@ -307,19 +306,17 @@ class ASTSearcher(ast.NodeVisitor):
         return self.__functions
 
 
-
-
 class ExperimentFunctionGraphCreator(ast.NodeVisitor):
     def __init__(self, experiment):
         self.__experiment = experiment
         self.__experiment_function_graph = None
 
-
-    def __initialize_script_function_graph(self, script, imported_scripts_name):
+    #
+    def __initialize_script_function_graph(self, script, imported_scripts_names):
         script_function_graph = Graph()
         
         list_of_vertices = []
-        for imported_script_name in imported_scripts_name:
+        for imported_script_name in imported_scripts_names:
             list_of_vertices += self.__experiment.scripts[imported_script_name].function_graph.vertices
         
         for vertice in list_of_vertices:
@@ -329,44 +326,47 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
 
         return script_function_graph
 
-
+    #
     def create_experiment_function_graph(self):
         self.__experiment_function_graph = self.__create_script_function_graph("__main__")
 
-
-    def __create_imported_scripts_function_graph(self, imported_scripts):
-        for imported_script in imported_scripts:
-            self.__create_script_function_graph(imported_script)
+    #
+    def __create_user_defined_imported_scripts_function_graphs(self, user_defined_imported_scripts):
+        for user_defined_imported_script in user_defined_imported_scripts:
+            self.__create_script_function_graph(user_defined_imported_script)
 
 
     def __create_script_function_graph(self, script_name):
         #try:
-        
-
-        print("SCRIPT BEING CREATED: ", script_name)
         script = self.__experiment.scripts[script_name]
 
-        imported_scripts = script.get_user_defined_modules(self.__experiment.experiment_base_dir)
+        user_defined_imported_scripts = script.get_user_defined_imported_scripts(self.__experiment.experiment_base_dir)
         
-        print("IMPORTED SCRIPTS: ", imported_scripts)
+        print("===================================================================")
+        print("SCRIPT BEING CREATED: ", script_name)
+        print("USER DEFINED IMPORTED SCRIPTS: ", user_defined_imported_scripts)
         
-        self.__create_imported_scripts_function_graph(imported_scripts)
+        self.__create_user_defined_imported_scripts_function_graphs(user_defined_imported_scripts)
 
-        self.__script_function_graph = self.__initialize_script_function_graph(script, imported_scripts)
+        self.__script_function_graph = self.__initialize_script_function_graph(script, user_defined_imported_scripts)
         
         print("REMEMBER SCRIPT BEING CREATED: ", script_name)
-        print("GRAPH INITIALIZED:")
-        self.__script_function_graph.print_graph()
+        print("GRAPH INITIALIZED:", len(self.__script_function_graph.vertices))
+        dictionary = {}
+        for script_name in user_defined_imported_scripts:
+            dictionary.update(self.__experiment.scripts[script_name].functions)
+        dictionary.update(script.functions)
+        self.__script_function_graph.print_graph(dictionary)
 
         self.__current_script = script
         self.__current_function_name = ""
         self.__current_function = None
-        self.visit(script.AST)
+        #self.visit(script.AST)
         
         script.function_graph = self.__script_function_graph
         
-        print("GRAPH COMPLETED:")
-        self.__script_function_graph.print_graph()
+        print("GRAPH COMPLETED:", len(self.__script_function_graph.vertices))
+        self.__script_function_graph.print_graph(dictionary)
 
         #except Exception:
         #   raise RuntimeError("Un unexpected error occurred while trying to create the experiment function graph!")
@@ -553,7 +553,7 @@ class GraphVertice():
 
     ##########DEBUG#############
     def print_graph_vertice(self, d = {}):
-        """
+        
         for e in d:
             if(self.data == d[e]):
                 print("Graph Vertice:", e)
@@ -565,6 +565,7 @@ class GraphVertice():
         print("Graph Vertice:", self.data.qualname)
         for linked_vertice in self.__linked_vertices:
             print("    Linked Vertice:", linked_vertice.__data.qualname)
+        """
 
 def get_source_code_executed(function, function_graph):
     list_of_graph_vertices_not_yet_processed = []

@@ -9,3 +9,4 @@ Limitações da implementação do grafo de funções:
             É permitido: from random import random as rd
             Não é permitido: from random import *
     
+    4)Analisar casos em que o import realizado é feito em uma pasta que contém o arquivo __init__.py

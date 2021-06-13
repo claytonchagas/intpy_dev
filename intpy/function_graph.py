@@ -514,6 +514,13 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
             return possible_functions_called
         
         def find_function_called(function_called_name, possible_functions_called):
+            number_of_possible_functions_called = len(possible_functions_called)
+            if(number_of_possible_functions_called == 0):
+                return None
+            elif(number_of_possible_functions_called == 1):
+                return possible_functions_called[0]
+            """
+            OLD IMPLEMENTATION (WILL BE USEFUL WHEN THERE IS MORE THAN A POSSIBLE FUNCTION CALLED):
             if(len(possible_functions_called) >= 1):
                 #Finding function defined in the smaller scope
                 function_called = None
@@ -538,7 +545,8 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
                         function_called_name_prefix = ""
                 
                 return function_called
-        
+            """
+            
         #Testing if this node represents a call to some function done inside another function
         if(self.__current_function_name != ""):
             function_called = None
@@ -550,7 +558,7 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
 
                 function_called_name = node.func.id
                 possible_functions_called = find_possible_functions_called(function_called_name)
-                #############function_called = find_function_called(function_called_name, possible_functions_called)
+                function_called = find_function_called(function_called_name, possible_functions_called)
             
             elif(isinstance(node.func, ast.Attribute)):
                 #In this case the function called is a function imported with the command
@@ -568,7 +576,7 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
                 function_called_name = ".".join(function_called_name_parts)
 
                 possible_functions_called = find_possible_functions_called(function_called_name)
-                #############function_called = find_function_called(function_called_name, possible_functions_called)
+                function_called = find_function_called(function_called_name, possible_functions_called)
             
             if(function_called != None):
                 function_called_graph_vertice = self.__script_function_graph.search_vertice(function_called)

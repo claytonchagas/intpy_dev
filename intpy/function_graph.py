@@ -455,36 +455,28 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
 
             print("function_called_name:", function_called_name)
 
-            possible_functions_called = []
+            possible_functions_called = {}
             if(function_called_name.find(".") == -1):
-                for function in self.__current_script.functions.values():
-                    if(function.name == function_called_name):
-                        possible_functions_called.append(function)
+                for function_name in self.__current_script.functions:
+                    if(self.__current_script.functions[function_name].name == function_called_name):
+                        possible_functions_called[function_name] = self.__current_script.functions[function_name]
                                 
                 import_command = self.__current_script.get_import_command_of_function(function_called_name)
                 if(import_command is None):
 
-                    print("possible_functions_called:")
-                    for function in possible_functions_called:
-                        for key in self.__dictionary:
-                            if(self.__dictionary[key] == function):
-                                print(key)
+                    print("possible_functions_called:", possible_functions_called)
 
                     return possible_functions_called
 
                 imported_script_name = self.__current_script.import_command_to_imported_scripts_names(import_command)[0]
                 if(not is_an_user_defined_script(imported_script_name, self.__experiment.experiment_base_dir)):
                     
-                    print("possible_functions_called:")
-                    for function in possible_functions_called:
-                        for key in self.__dictionary:
-                            if(self.__dictionary[key] == function):
-                                print(key)
+                    print("possible_functions_called:", possible_functions_called)
                     
                     return possible_functions_called
                 
                 original_imported_function_name = self.__current_script.get_original_name_of_function_imported_with_import_from(import_command, function_called_name)
-                possible_functions_called.append(self.__experiment.scripts[imported_script_name].get_function(original_imported_function_name))
+                possible_functions_called[original_imported_function_name] = self.__experiment.scripts[imported_script_name].functions[original_imported_function_name]
                 
             else:
                 import_command = self.__current_script.get_import_command_of_function(function_called_name)
@@ -503,13 +495,9 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
                 if(not is_an_user_defined_script(imported_script_name, self.__experiment.experiment_base_dir)):
                     return possible_functions_called
                 
-                possible_functions_called.append(self.__experiment.scripts[imported_script_name].get_function(function_called_name[function_called_name.rfind(".") + 1:]))
+                possible_functions_called[function_called_name[function_called_name.rfind(".") + 1:]] = self.__experiment.scripts[imported_script_name].functions[function_called_name[function_called_name.rfind(".") + 1:]]
             
-            print("possible_functions_called:")
-            for function in possible_functions_called:
-                for key in self.__dictionary:
-                    if(self.__dictionary[key] == function):
-                        print(key)
+            print("possible_functions_called:", possible_functions_called)
 
             return possible_functions_called
         
@@ -518,14 +506,20 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
             if(number_of_possible_functions_called == 0):
                 return None
             elif(number_of_possible_functions_called == 1):
-                return possible_functions_called[0]
+                return list(possible_functions_called.values())[0]
             """
-            OLD IMPLEMENTATION (WILL BE USEFUL WHEN THERE IS MORE THAN A POSSIBLE FUNCTION CALLED):
-            if(len(possible_functions_called) >= 1):
+            else:
+                #In this case there are two functions defined in the script
+                #with the same name
                 #Finding function defined in the smaller scope
                 function_called = None
                 function_called_name_prefix = self.__current_function_name + "."
                 while(function_called == None):
+                    
+
+
+
+
                     for possible_function_called in possible_functions_called:
                         if(function_called_name_prefix + function_called_name == possible_function_called):
                             function_called = self.__current_script.functions[possible_function_called]
@@ -536,17 +530,16 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
 
                     #The string in "function_called_name_prefix" always ends in a dot (".")
                     #Hence, the last element of "function_called_name_prefix.split('.')" will
-                    #always be a blank string ("")
+                    #always be an empty string ("")
                     if(len(function_called_name_prefix.split(".")) > 2):
                         function_called_name_prefix = function_called_name_prefix.split(".")
                         function_called_name_prefix.pop(-2)
                         function_called_name_prefix = ".".join(function_called_name_prefix)
                     else:
                         function_called_name_prefix = ""
-                
                 return function_called
             """
-            
+        
         #Testing if this node represents a call to some function done inside another function
         if(self.__current_function_name != ""):
             function_called = None

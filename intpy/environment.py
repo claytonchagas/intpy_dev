@@ -1,7 +1,7 @@
 import os
 import ctypes
 
-from .db import DB
+from .banco import Banco
 from intpy.logger.log import debug
 
 
@@ -41,7 +41,6 @@ def init_env():
     _create_database()
 
 
-
 def _create_database():
     debug("creating database")
     if _db_exists():
@@ -53,11 +52,12 @@ def _create_database():
 
 def _create_table():
     debug("creating table")
-    conn = DB('.intpy/intpy.db')
+    conn = Banco('.intpy/intpy.db')
 
     stmt = "CREATE TABLE IF NOT EXISTS CACHE (\
     id INTEGER PRIMARY KEY AUTOINCREMENT,\
-    cache_file TEXT UNIQUE\
+    cache_file TEXT UNIQUE,\
+    fun_name TEXT\
     );"
 
     conn.executeCmdSQLNoReturn(stmt)

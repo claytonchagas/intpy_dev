@@ -101,6 +101,6 @@ def salvarNovosDadosBanco():
     CONEXAO_BANCO.salvarAlteracoes()
     CONEXAO_BANCO.fecharConexao()
 
-CONEXAO_BANCO = Banco(os.path.join(".intpy", "intpy.db"))
+
 CACHED_DATA_DICTIONARY = {}
 NEW_DATA_DICTIONARY = {}

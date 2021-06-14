@@ -413,9 +413,15 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
         print("REMEMBER SCRIPT BEING CREATED: ", script_name)
         print("GRAPH INITIALIZED:", len(self.__script_function_graph.vertices))
         dictionary = {}
+        #OLD IMPLEMENTATION:
+        #for script_name in user_defined_imported_scripts:
+        #    dictionary.update(self.__experiment.scripts[script_name].functions)
+        #dictionary.update(script.functions)
         for script_name in user_defined_imported_scripts:
-            dictionary.update(self.__experiment.scripts[script_name].functions)
-        dictionary.update(script.functions)
+            for function_name in self.__experiment.scripts[script_name].functions:
+                dictionary[self.__experiment.scripts[script_name].functions[function_name]] = function_name
+        for function_name in script.functions:
+            dictionary[script.functions[function_name]] = function_name
         self.__dictionary = dictionary
         self.__script_function_graph.print_graph(dictionary)
 
@@ -507,7 +513,6 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
                 return None
             elif(number_of_possible_functions_called == 1):
                 return list(possible_functions_called.values())[0]
-            """
             else:
                 #In this case there are two functions defined in the script
                 #with the same name
@@ -517,12 +522,12 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
                 while(function_called == None):
                     
 
+                    print("Função testada:", function_called_name_prefix + function_called_name)
 
 
-
-                    for possible_function_called in possible_functions_called:
-                        if(function_called_name_prefix + function_called_name == possible_function_called):
-                            function_called = self.__current_script.functions[possible_function_called]
+                    for possible_function_called_name in possible_functions_called:
+                        if(function_called_name_prefix + function_called_name == possible_function_called_name):
+                            function_called = self.__current_script.functions[possible_function_called_name]
                             break
                     
                     if(function_called_name_prefix == ""):
@@ -538,7 +543,6 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
                     else:
                         function_called_name_prefix = ""
                 return function_called
-            """
         
         #Testing if this node represents a call to some function done inside another function
         if(self.__current_function_name != ""):
@@ -631,7 +635,13 @@ class GraphVertice():
 
     ##########DEBUG#############
     def print_graph_vertice(self, d = {}):
-        
+        if self.data in d:
+            print("Graph Vertice:", d[self.data], self.data)
+        for linked_vertice in self.__linked_vertices:
+            if linked_vertice.__data in d:
+                print("    Linked Vertice:", d[linked_vertice.__data], linked_vertice.__data)
+
+        """
         for e in d:
             if(self.data == d[e]):
                 print("Graph Vertice:", e)
@@ -639,6 +649,8 @@ class GraphVertice():
             for e in d:
                 if(linked_vertice.__data == d[e]):
                     print("    Linked Vertice:", e)
+        """
+
         """
         print("Graph Vertice:", self.data.qualname)
         for linked_vertice in self.__linked_vertices:

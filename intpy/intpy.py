@@ -1,5 +1,6 @@
 import inspect
 import time
+import sys
 
 from functools import wraps
 
@@ -12,6 +13,10 @@ argsp_v, argsp_no_cache = get_params()
 print(argsp_v)
 
 print(argsp_no_cache)
+
+if argsp_v == None and not argsp_no_cache:
+    print("Error: enter the \"-h\" parameter on the command line after \"python script.py\" to see usage instructions")
+    sys.exit()
 
 if not argsp_no_cache:
     init_env()

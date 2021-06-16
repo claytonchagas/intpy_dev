@@ -53,9 +53,9 @@ def get_cache_data(fun_name, fun_args, fun_source, argsp_v):
     if(id in DATA_DICTIONARY):
         return DATA_DICTIONARY[id]
     
-    if argsp_v == ['1d-ow'] or argsp_v == ['v021x']:
+    if argsp_v == ['1d-ad'] or argsp_v == ['v022x']:
         return None
-    elif argsp_v == ['1d-ad'] or argsp_v == ['v022x']:
+    elif argsp_v == ['1d-ow'] or argsp_v == ['v021x']:
         list_file_name = _get(_get_file_name(id))
         file_name = None
         if(len(list_file_name) == 1):

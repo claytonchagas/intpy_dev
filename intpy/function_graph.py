@@ -340,7 +340,7 @@ class ASTSearcher(ast.NodeVisitor):
         
     def visit_FunctionDef(self, node):
         previous_function_name = self.__current_function_name
-        self.__current_function_name = node.name if self.__current_function_name == "" else self.__current_function_name + "." + node.name
+        self.__current_function_name = node.name if self.__current_function_name == "" else self.__current_function_name + ".<locals>." + node.name
         previous_function = self.__current_function
         self.__current_function = node
 
@@ -446,7 +446,7 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node):
         previous_function_name = self.__current_function_name
-        self.__current_function_name = node.name if self.__current_function_name == "" else self.__current_function_name + "." + node.name
+        self.__current_function_name = node.name if self.__current_function_name == "" else self.__current_function_name + ".<locals>." + node.name
         previous_function = self.__current_function
         self.__current_function = node
 
@@ -518,7 +518,7 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
                 #with the same name
                 #Finding function defined in the smaller scope
                 function_called = None
-                function_called_name_prefix = self.__current_function_name + "."
+                function_called_name_prefix = self.__current_function_name + ".<locals>."
                 while(function_called == None):
                     
 
@@ -533,13 +533,13 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
                     if(function_called_name_prefix == ""):
                         break
 
-                    #The string in "function_called_name_prefix" always ends in a dot (".")
-                    #Hence, the last element of "function_called_name_prefix.split('.')" will
+                    #The string in "function_called_name_prefix" always ends in a dot (".<locals>.")
+                    #Hence, the last element of "function_called_name_prefix.split('.<locals>.')" will
                     #always be an empty string ("")
-                    if(len(function_called_name_prefix.split(".")) > 2):
-                        function_called_name_prefix = function_called_name_prefix.split(".")
+                    if(len(function_called_name_prefix.split(".<locals>.")) > 2):
+                        function_called_name_prefix = function_called_name_prefix.split(".<locals>.")
                         function_called_name_prefix.pop(-2)
-                        function_called_name_prefix = ".".join(function_called_name_prefix)
+                        function_called_name_prefix = ".<locals>.".join(function_called_name_prefix)
                     else:
                         function_called_name_prefix = ""
                 return function_called

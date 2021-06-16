@@ -118,49 +118,6 @@ class Script():
             return self.__functions[function_name]
         return None
 
-
-    def get_function_imported_with_import_from(self, function_called_name):
-        import_command = self.get_import_command_of_function(function_called_name)
-        if(import_command is None):
-            return None
-        
-        imported_script_name = self.import_command_to_imported_scripts_names(import_command)
-        imported_script = self.__experiment.scripts[imported_script_name]
-        
-        for vertice in self.__experiment.scripts[imported_script_name].function_graph.vertices():
-            pass
-        
-        functions_imported = self.__current_script.get_functions_imported_with_import_from()
-        if function_called_name in functions_imported:
-            possible_functions_called.append(functions_imported[function_called_name])
-
-
-    def get_imported_module_where_function_name_is_defined(self, function_name):
-        for import_command in self.__import_commands:
-            if(isinstance(import_command, ast.ImportFrom)):
-                for alias in import_command.names:
-                    function_imported_name = alias.asname if alias.asname is not None else alias.name
-                    if(function_imported_name == function_name):
-                        return self.import_command_to_imported_scripts_names(import_command)
-        return None
-                    
-
-    def get_functions_imported_with_import_from(self):
-        functions_imported = {}
-        for import_command in self.__import_commands:
-            if(isinstance(import_command, ast.ImportFrom)):
-                for alias in import_command.names:
-                    function_imported_name = alias.asname if alias.asname is not None else alias.name
-                    
-
-    def get_functions_imported_with_import(self):
-        functions_imported = {}
-        for import_command in self.__import_commands:
-            if(isinstance(import_command, ast.Import)):
-                for alias in import_command.names:
-                    function_imported_name = alias.asname if alias.asname is not None else alias.name
-
-
     ###DEBUG####
     def print(self):
         print("#####SCRIPT#####")

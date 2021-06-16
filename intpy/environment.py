@@ -1,5 +1,5 @@
 import os
-import ctypes
+#import ctypes
 from .banco import Banco
 
 from intpy.logger.log import debug

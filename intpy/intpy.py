@@ -1,64 +1,24 @@
 import inspect
-from functools import wraps
 import time
-import sys
-import importlib
-import argparse
+
+from functools import wraps
+
+from intpy.parser_params import get_params
+from intpy.environment import init_env
+from intpy.logger.log import debug
+
+argsp_v, argsp_no_cache = get_params()
+
+print(argsp_v)
+
+print(argsp_no_cache)
+
+if not argsp_no_cache:
+    init_env()
+    from intpy.data_access import get_cache_data, create_entry, salvarNovosDadosBanco
 
 
-def usage_msg():
-    return "\nIntPy's Python command line arguments help:\n\n\
-To run your experiment with IntPy use:\n\
-$ python "+str(sys.argv[0])+" program_arguments [-h] [-v version, --version version] [--no-cache]\n\n\
-To run in the IntPy DEBUG mode use:\n\
-$ DEBUG=True python "+str(sys.argv[0])+" program_arguments [-h] [-v version, --version version] [--no-cache]"
-    
-
-versions = ['1d-ow', 'v021x', '1d-ad', 'v022x', '2d-ad', 'v023x', '2d-ad-t', 'v024x', '2d-ad-f', 'v025x', '2d-ad-ft', 'v026x', '2d-lz', 'v027x']
-
-intpy_arg_parser = argparse.ArgumentParser(usage=usage_msg())
-
-intpy_arg_parser.add_argument('args',
-                               metavar='program arguments',
-                               nargs='*',
-                               type=str, 
-                               help='program arguments')
-
-intpy_arg_parser.add_argument('-v',
-                              '--version',
-                               choices=versions,
-                               metavar='',
-                               nargs=1,
-                               type=str, 
-                               help='IntPy\'s mechanism version: choose one of the following options: '+', '.join(versions))
-
-intpy_arg_parser.add_argument('--no-cache',
-                              default=False,
-                              action="store_true",
-                              help='IntPy\'s disable cache')
-
-args = intpy_arg_parser.parse_args()
-
-print(args.version)
-
-if args.version == ['1d-ow'] or args.version == ['v021x']:
-    v_data_access = ".data_access_v021x_1d-ow"
-elif args.version == ['1d-ad'] or args.version == ['v022x']:
-    v_data_access = ".data_access_v022x_1d-ad"
-elif args.version == ['2d-ad'] or args.version == ['v023x']:
-    v_data_access = ".data_access_v023x_2d-ad"
-elif args.version == ['2d-ad-t'] or args.version == ['v024x']:
-    v_data_access = ".data_access_v024x_2d-ad-t"
-elif args.version == ['2d-ad-f'] or args.version == ['v025x']:
-    v_data_access = ".data_access_v025x_2d-ad-f"
-elif args.version == ['2d-ad-ft'] or args.version == ['v026x']:
-    v_data_access = ".data_access_v026x_2d-ad-ft"
-elif args.version == ['2d-lz'] or args.version == ['v027x']:
-    v_data_access = ".data_access_v027x_2d-lz"
-else:
-    v_data_access = ".data_access_v021x_1d-ow"
-
-
+"""
 v_data_access_import = importlib.import_module(v_data_access, package="intpy")
 print(v_data_access_import)
 
@@ -70,13 +30,33 @@ print(f_create_entry)
 
 f_salvarNovosDadosBanco = getattr(v_data_access_import, "salvarNovosDadosBanco")
 print(f_salvarNovosDadosBanco)
+"""
 
-# from .data_access import get_cache_data, create_entry, salvarNovosDadosBanco
-from .logger.log import debug
 
-def _get_cache(func, args):
-    # return get_cache_data(func.__name__, args, inspect.getsource(func))
-    return f_get_cache_data(func.__name__, args, inspect.getsource(func))
+#On the decorator "initialize_intpy", "user_script_path" is declared
+#to maintain compatibility between different versions of IntPy
+def initialize_intpy(user_script_path):
+    def decorator(f):
+        def execution(*method_args, **method_kwargs):
+            #if not argsp_no_cache:
+                #init_env()
+            f(*method_args, **method_kwargs)
+            if not argsp_no_cache:
+                _salvarCache()
+        return execution
+    return decorator
+
+
+if argsp_no_cache:
+    def deterministic(f):
+        return f
+else:
+    def deterministic(f):
+        return _method_call(f) if _is_method(f) else _function_call(f)
+
+
+def _get_cache(func, args, argsp_v):
+    return get_cache_data(func.__name__, args, inspect.getsource(func), argsp_v)
 
 
 def _cache_exists(cache):
@@ -86,8 +66,7 @@ def _cache_exists(cache):
 def _cache_data(func, fun_args, fun_return, elapsed_time):
     debug("starting caching data for {0}({1})".format(func.__name__, fun_args))
     start = time.perf_counter()
-    # create_entry(func.__name__, fun_args, fun_return, inspect.getsource(func))
-    f_create_entry(func.__name__, fun_args, fun_return, inspect.getsource(func))
+    create_entry(func.__name__, fun_args, fun_return, inspect.getsource(func))
     end = time.perf_counter()
     debug("caching {0} took {1}".format(func.__name__, end - start))
 
@@ -108,7 +87,7 @@ def _method_call(f):
     @wraps(f)
     def wrapper(self, *method_args, **method_kwargs):
         debug("calling {0}".format(f.__name__))
-        c = _get_cache(f, method_args)
+        c = _get_cache(f, method_args, argsp_v)
         if not _cache_exists(c):
             debug("cache miss for {0}({1})".format(f.__name__, *method_args))
             return_value, elapsed_time = _execute_func(f, self, *method_args, **method_kwargs)
@@ -125,7 +104,7 @@ def _function_call(f):
     @wraps(f)
     def wrapper(*method_args, **method_kwargs):
         debug("calling {0}".format(f.__name__))
-        c = _get_cache(f, method_args)
+        c = _get_cache(f, method_args, argsp_v)
         if not _cache_exists(c):
             debug("cache miss for {0}({1})".format(f.__name__, *method_args))
             return_value, elapsed_time = _execute_func(f, *method_args, **method_kwargs)
@@ -144,32 +123,5 @@ def _is_method(f):
     return bool(args and args[0] == 'self')
 
 
-#PCACHE = str(sys.argv[-1])
-#if PCACHE == "--no-cache":
-if args.no_cache:
-    def deterministic(f):
-        return f
-else:
-    def deterministic(f):
-        return _method_call(f) if _is_method(f) else _function_call(f)
-
-
-def salvarCache():
-    f_salvarNovosDadosBanco()
-    # salvarNovosDadosBanco()
-
-
-#On the decorator "initialize_intpy", "user_script_path" is declared
-#to maintain compatibility between different versions of IntPy
-def initialize_intpy(user_script_path):
-    def decorator(f):
-        def execution(*method_args, **method_kwargs):
-            #if len(sys.argv) < len(method_args)+2:
-                #print("Choose one IntPy's mechanism version")
-                #sys.exit()
-            f(*method_args, **method_kwargs)
-            #if PCACHE != "--no-cache":
-            if args.no_cache == False:
-                salvarCache()
-        return execution
-    return decorator
+def _salvarCache():
+    salvarNovosDadosBanco()

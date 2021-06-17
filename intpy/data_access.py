@@ -15,6 +15,7 @@ CONEXAO_BANCO = Banco(os.path.join(".intpy", "intpy.db"))
 def _save(file_name):
     CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT OR IGNORE INTO CACHE(cache_file) VALUES ('{0}')".format(file_name))
 
+#Versão desenvolvida por causa do _save em salvarNovosDadosBanco para a v0.2.5.x, com o nome da função
 def _save_fun_name(file_name, fun_name):
     CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT OR IGNORE INTO CACHE(cache_file, fun_name) VALUES ('{0}', '{1}')".format(file_name, fun_name))
 
@@ -22,6 +23,7 @@ def _save_fun_name(file_name, fun_name):
 def _get(id):
     return CONEXAO_BANCO.executarComandoSQLSelect("SELECT cache_file FROM CACHE WHERE cache_file = '{0}'".format(id))
 
+#Versão desenvolvida por causa do _get_fun_name, que diferente do _get, recebe o nome da função ao invés do id, serve para a v0.2.5.x, que tem o nome da função
 def _get_fun_name(fun_name):
     return CONEXAO_BANCO.executarComandoSQLSelect("SELECT cache_file FROM CACHE WHERE fun_name = '{0}'".format(fun_name))
 
@@ -95,6 +97,33 @@ def _get_cache_data_v023x(id):
     return None
 
 
+def _get_cache_data_v027x(id):
+    #Checking if the result is stored in DATA_DICTIONARY
+    if(id in DATA_DICTIONARY):
+        return DATA_DICTIONARY[id]
+
+    #Checking if the result is stored in NEW_DATA_DICTIONARY
+    if(id in NEW_DATA_DICTIONARY):
+        return NEW_DATA_DICTIONARY[id]
+    
+    ######print("PESQUISANDO NO BANCO...")
+
+    #Checking if the result is on database
+    list_file_name = _get(_get_file_name(id))
+
+    if(len(list_file_name) == 1):
+        result = _deserialize(id)
+        
+        if(result is not None):
+            DATA_DICTIONARY[id] = result
+
+            ######print("DATA_DICTIONARY DEPOIS:", DATA_DICTIONARY)
+        
+        return result
+
+    return None
+
+
 def _get_cache_data_v025x(id, fun_name):
     #Checking if the results of this function were already selected from
     #the database and inserted on the dictionary CACHED_DATA_DICTIONARY
@@ -130,7 +159,7 @@ def _get_cache_data_v025x(id, fun_name):
     return None
 
 
-# Aqui mistura v0.2.1.x e v0.2.2.x
+# Aqui misturam as versões v0.2.1.x a v0.2.7.x
 def get_cache_data(fun_name, fun_args, fun_source, argsp_v):
     id = _get_id(fun_name, fun_args, fun_source)
 
@@ -146,6 +175,9 @@ def get_cache_data(fun_name, fun_args, fun_source, argsp_v):
     elif argsp_v == ['2d-ad-f'] or argsp_v == ['v025x']:
         ret_get_cache_data_v025x = _get_cache_data_v025x(id, fun_name)
         return ret_get_cache_data_v025x
+    elif argsp_v == ['2d-lz'] or argsp_v == ['v027x']:
+        ret_get_cache_data_v027x = _get_cache_data_v027x(id)
+        return ret_get_cache_data_v027x
 
 """
     if argsp_v == ['1d-ad'] or argsp_v == ['v022x']:
@@ -193,16 +225,18 @@ def _autofix(id):
     debug("environment fixed")
 
 
+# Aqui misturam as versões v0.2.1.x a v0.2.7.x
 def create_entry(fun_name, fun_args, fun_return, fun_source, argsp_v):
     id = _get_id(fun_name, fun_args, fun_source)
     if argsp_v == ['1d-ow'] or argsp_v == ['v021x'] or argsp_v == ['1d-ow'] or argsp_v == ['v021x']:
         DATA_DICTIONARY[id] = fun_return
-    elif argsp_v == ['2d-ad'] or argsp_v == ['v023x']:
+    elif argsp_v == ['2d-ad'] or argsp_v == ['v023x'] or argsp_v == ['2d-lz'] or argsp_v == ['v027x']:
         NEW_DATA_DICTIONARY[id] = fun_return
     elif  argsp_v == ['2d-ad-f'] or argsp_v == ['v025x']:
         NEW_DATA_DICTIONARY[id] = (fun_return, fun_name)
 
 
+# Aqui misturam as versões v0.2.1.x a v0.2.7.x
 def salvarNovosDadosBanco(argsp_v):
     def _serialize(return_value, file_name):
         with open(".intpy/cache/{0}".format(_get_file_name(file_name)), 'wb') as file:
@@ -216,14 +250,14 @@ def salvarNovosDadosBanco(argsp_v):
             debug("inserting reference in database")
             _save(_get_file_name(id))
     
-    elif argsp_v == ['2d-ad'] or argsp_v == ['v023x']:
+    elif argsp_v == ['2d-ad'] or argsp_v == ['v023x'] or argsp_v == ['2d-lz'] or argsp_v == ['v027x']:
         for id in NEW_DATA_DICTIONARY:
             debug("serializing return value from {0}".format(id))
             _serialize(NEW_DATA_DICTIONARY[id], id)
 
             debug("inserting reference in database")
             _save(_get_file_name(id))
-
+    
     elif  argsp_v == ['2d-ad-f'] or argsp_v == ['v025x']:
         for id in NEW_DATA_DICTIONARY:
             debug("serializing return value from {0}".format(id))

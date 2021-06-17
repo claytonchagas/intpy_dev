@@ -56,7 +56,8 @@ def _create_table():
 
     stmt = "CREATE TABLE IF NOT EXISTS CACHE (\
     id INTEGER PRIMARY KEY AUTOINCREMENT,\
-    cache_file TEXT UNIQUE\
+    cache_file TEXT UNIQUE,\
+    fun_name TEXT\
     );"
 
     conexaoBanco.executarComandoSQLSemRetorno(stmt)

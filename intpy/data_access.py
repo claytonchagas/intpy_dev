@@ -13,17 +13,21 @@ CONEXAO_BANCO = Banco(os.path.join(".intpy", "intpy.db"))
 
 
 def _save(file_name):
-    CONEXAO_BANCO.executarComandoSQLSemRetorno(
-        "INSERT OR IGNORE INTO CACHE(cache_file) VALUES ('{0}')".format(file_name))
+    CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT OR IGNORE INTO CACHE(cache_file) VALUES ('{0}')".format(file_name))
+
+def _save_fun_name(file_name, fun_name):
+    CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT OR IGNORE INTO CACHE(cache_file, fun_name) VALUES ('{0}', '{1}')".format(file_name, fun_name))
 
 
 def _get(id):
     return CONEXAO_BANCO.executarComandoSQLSelect("SELECT cache_file FROM CACHE WHERE cache_file = '{0}'".format(id))
 
+def _get_fun_name(fun_name):
+    return CONEXAO_BANCO.executarComandoSQLSelect("SELECT cache_file FROM CACHE WHERE fun_name = '{0}'".format(fun_name))
+
 
 def _remove(id):
-    CONEXAO_BANCO.executarComandoSQLSemRetorno(
-        "DELETE FROM CACHE WHERE cache_file = '{0}';".format(id))
+    CONEXAO_BANCO.executarComandoSQLSemRetorno("DELETE FROM CACHE WHERE cache_file = '{0}';".format(id))
 
 
 def _get_file_name(id):
@@ -37,6 +41,8 @@ def _get_id(fun_name, fun_args, fun_source):
 DATA_DICTIONARY = {}
 
 NEW_DATA_DICTIONARY = {}
+
+FUNCTIONS_ALREADY_SELECTED_FROM_DB = []
 
 
 def _get_cache_data_v021x(id):
@@ -70,8 +76,7 @@ def _get_cache_data_v022x(id):
 
 
 def _get_cache_data_v023x(id):
-    list_of_ipcache_files = CONEXAO_BANCO.executarComandoSQLSelect(
-        "SELECT cache_file FROM CACHE")
+    list_of_ipcache_files = CONEXAO_BANCO.executarComandoSQLSelect("SELECT cache_file FROM CACHE")
     for ipcache_file in list_of_ipcache_files:
         ipcache_file = ipcache_file[0].replace(".ipcache", "")
 
@@ -90,6 +95,41 @@ def _get_cache_data_v023x(id):
     return None
 
 
+def _get_cache_data_v025x(id, fun_name):
+    #Checking if the results of this function were already selected from
+    #the database and inserted on the dictionary CACHED_DATA_DICTIONARY
+    if(fun_name in FUNCTIONS_ALREADY_SELECTED_FROM_DB):
+        #Checking if the result is saved in the cache
+        if(id in DATA_DICTIONARY):
+            return DATA_DICTIONARY[id]
+
+        #Checking if the result was already processed at this execution
+        if(id in NEW_DATA_DICTIONARY):
+            return NEW_DATA_DICTIONARY[id][0]
+
+    else:
+        #Creating a select query to add to CACHED_DATA_DICTIONARY all data
+        #related to the function fun_name
+        list_file_names = _get_fun_name(fun_name)
+        for file_name in list_file_names:
+            file_name = file_name[0].replace(".ipcache", "")
+            
+            result = _deserialize(file_name)
+            if(result is None):
+                continue
+            else:
+                DATA_DICTIONARY[file_name] = result
+
+        FUNCTIONS_ALREADY_SELECTED_FROM_DB.append(fun_name)
+
+        ######print("DATA_DICTIONARY DEPOIS:", DATA_DICTIONARY)
+
+        if(id in DATA_DICTIONARY):
+            return DATA_DICTIONARY[id]
+
+    return None
+
+
 # Aqui mistura v0.2.1.x e v0.2.2.x
 def get_cache_data(fun_name, fun_args, fun_source, argsp_v):
     id = _get_id(fun_name, fun_args, fun_source)
@@ -103,6 +143,9 @@ def get_cache_data(fun_name, fun_args, fun_source, argsp_v):
     elif argsp_v == ['2d-ad'] or argsp_v == ['v023x']:
         ret_get_cache_data_v023x = _get_cache_data_v023x(id)
         return ret_get_cache_data_v023x
+    elif argsp_v == ['2d-ad-f'] or argsp_v == ['v025x']:
+        ret_get_cache_data_v025x = _get_cache_data_v025x(id, fun_name)
+        return ret_get_cache_data_v025x
 
 """
     if argsp_v == ['1d-ad'] or argsp_v == ['v022x']:
@@ -156,6 +199,8 @@ def create_entry(fun_name, fun_args, fun_return, fun_source, argsp_v):
         DATA_DICTIONARY[id] = fun_return
     elif argsp_v == ['2d-ad'] or argsp_v == ['v023x']:
         NEW_DATA_DICTIONARY[id] = fun_return
+    elif  argsp_v == ['2d-ad-f'] or argsp_v == ['v025x']:
+        NEW_DATA_DICTIONARY[id] = (fun_return, fun_name)
 
 
 def salvarNovosDadosBanco(argsp_v):
@@ -178,6 +223,14 @@ def salvarNovosDadosBanco(argsp_v):
 
             debug("inserting reference in database")
             _save(_get_file_name(id))
+
+    elif  argsp_v == ['2d-ad-f'] or argsp_v == ['v025x']:
+        for id in NEW_DATA_DICTIONARY:
+            debug("serializing return value from {0}".format(id))
+            _serialize(NEW_DATA_DICTIONARY[id][0], id)
+
+            debug("inserting reference in database")
+            _save_fun_name(_get_file_name(id), NEW_DATA_DICTIONARY[id][1])
 
     CONEXAO_BANCO.salvarAlteracoes()
     CONEXAO_BANCO.fecharConexao()

@@ -190,6 +190,10 @@ def create_experiment_function_graph(user_script_path):
 
         if(script_name == user_script_name):
             script_name = "__main__"
+
+        for function_name in script_ASTSearcher.functions:
+            script_ASTSearcher.functions[function_name].qualname = function_name
+        
         script = Script(script_name, script_AST, script_ASTSearcher.import_commands, script_ASTSearcher.functions)
         experiment.add_script(script)
 
@@ -235,7 +239,7 @@ def create_experiment_function_graph(user_script_path):
     """
     experimentFunctionGraphCreator = ExperimentFunctionGraphCreator(experiment)
     experimentFunctionGraphCreator.create_experiment_function_graph()
-    #return experimentFunctionGraphCreator.experiment_function_graph
+    return experimentFunctionGraphCreator.experiment_function_graph
     
 #
 def python_code_to_AST(file_name):
@@ -391,6 +395,7 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
         
         print("GRAPH COMPLETED:", len(self.__script_function_graph.vertices))
         self.__script_function_graph.print_graph(dictionary)
+        return self.__script_function_graph
 
         #except Exception:
         #   raise RuntimeError("Un unexpected error occurred while trying to create the experiment function graph!")
@@ -619,10 +624,15 @@ def get_source_code_executed(function, function_graph):
     list_of_graph_vertices_already_processed = []
     source_codes_executed = []
 
+    print("function.__qual__name:", function.__qualname__)
+
     for graph_vertice in function_graph.vertices:
         current_function_def_node = graph_vertice.data
-        if(current_function_def_node.name == function.__name__):
+        #if(current_function_def_node.name == function.__name__):
+        print("current_function_def_node.qualname:", current_function_def_node.qualname)
+        if(current_function_def_node.qualname == function.__qualname__):
             list_of_graph_vertices_not_yet_processed.append(graph_vertice)
+            break
 
     while(len(list_of_graph_vertices_not_yet_processed) > 0):
         current_vertice = list_of_graph_vertices_not_yet_processed.pop(0)

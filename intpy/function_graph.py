@@ -125,7 +125,7 @@ class Script():
         print("AST:", self.__AST)
         print("Import Commands:", self.__import_commands)
         print("Functions:", self.__functions)
-        print("Function Graph:", None if self.__function_graph is None else self.__function_graph.print_graph())
+        print("Function Graph:", self.__function_graph)
 
 
     @property
@@ -330,26 +330,23 @@ class ASTSearcher(ast.NodeVisitor):
 class ExperimentFunctionGraphCreator(ast.NodeVisitor):
     def __init__(self, experiment):
         self.__experiment = experiment
-        self.__experiment_function_graph = None
+        self.__experiment_function_graph = {}
 
     #
     def __initialize_script_function_graph(self, script, imported_scripts_names):
-        script_function_graph = Graph()
-        
-        list_of_vertices = []
+        script_function_graph = {}
         for imported_script_name in imported_scripts_names:
-            list_of_vertices += self.__experiment.scripts[imported_script_name].function_graph.vertices
-        
-        for vertice in list_of_vertices:
-            script_function_graph.insert_vertice(vertice)
+            script_function_graph.update(self.__experiment.scripts[imported_script_name].function_graph)
         for function in script.functions.values():
-            script_function_graph.insert_vertice(GraphVertice(function))
-
+            script_function_graph[function] = set()
         return script_function_graph
 
     #
     def create_experiment_function_graph(self):
         self.__experiment_function_graph = self.__create_script_function_graph("__main__")
+        print("EXPERIMENT GRAPH")
+        print(self.__experiment_function_graph)
+
 
     #
     def __create_user_defined_imported_scripts_function_graphs(self, user_defined_imported_scripts):
@@ -372,19 +369,11 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
         self.__script_function_graph = self.__initialize_script_function_graph(script, user_defined_imported_scripts)
         
         print("REMEMBER SCRIPT BEING CREATED: ", script_name)
-        print("GRAPH INITIALIZED:", len(self.__script_function_graph.vertices))
-        dictionary = {}
-        #OLD IMPLEMENTATION:
-        #for script_name in user_defined_imported_scripts:
-        #    dictionary.update(self.__experiment.scripts[script_name].functions)
-        #dictionary.update(script.functions)
-        for script_name in user_defined_imported_scripts:
-            for function_name in self.__experiment.scripts[script_name].functions:
-                dictionary[self.__experiment.scripts[script_name].functions[function_name]] = function_name
-        for function_name in script.functions:
-            dictionary[script.functions[function_name]] = function_name
-        self.__dictionary = dictionary
-        self.__script_function_graph.print_graph(dictionary)
+        print("GRAPH INITIALIZED:", len(self.__script_function_graph))
+        for function in self.__script_function_graph:
+            print(3*" ", function.qualname, function)
+            for link in self.__script_function_graph[function]:
+                print(6*" ", link.qualname, link)
 
         self.__current_script = script
         self.__current_function_name = ""
@@ -393,8 +382,11 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
         
         script.function_graph = self.__script_function_graph
         
-        print("GRAPH COMPLETED:", len(self.__script_function_graph.vertices))
-        self.__script_function_graph.print_graph(dictionary)
+        print("GRAPH COMPLETED:", len(self.__script_function_graph))
+        for function in self.__script_function_graph:
+            print(3*" ", function.qualname, function)
+            for link in self.__script_function_graph[function]:
+                print(6*" ", link.qualname, link)
         return self.__script_function_graph
 
         #except Exception:
@@ -538,9 +530,7 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
                 function_called = find_function_called(function_called_name, possible_functions_called)
             
             if(function_called != None):
-                function_called_graph_vertice = self.__script_function_graph.search_vertice(function_called)
-                current_function_graph_vertice = self.__script_function_graph.search_vertice(self.__current_function)
-                current_function_graph_vertice.insert_link(function_called_graph_vertice)
+                self.__script_function_graph[self.__current_function].add(function_called)
 
         self.generic_visit(node)
     
@@ -548,98 +538,25 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
     def experiment_function_graph(self):
         return self.__experiment_function_graph
 
-class Graph():
-    def __init__(self):
-        #Each element of self.__vertices should be of type GraphVertice
-        self.__vertices = []
-
-    def insert_vertice(self, vertice):
-        if(vertice not in self.__vertices):
-            self.__vertices.append(vertice)
-
-    #Returns the vertice which value of the attribute "data" is equals to the
-    #argument "data" passed to this method.
-    #If none of the vertices matches, returns None
-    def search_vertice(self, data):
-        for vertice in self.__vertices:
-            if(vertice.data == data):
-                return vertice
-        return None
-
-    @property
-    def vertices(self):
-        return self.__vertices
-
-    ############DEBUG#############
-    def print_graph(self, d={}):
-        for vertice in self.__vertices:
-            vertice.print_graph_vertice(d)
-
-class GraphVertice():
-    def __init__(self, data):
-        self.__data = data
-
-        #The elements of self.__linked_vertices should be of type GraphVertice
-        self.__linked_vertices = []
-
-    #Insert "link" in "self.__linked_vertices"
-    def insert_link(self, link):
-        if(link not in self.__linked_vertices):
-            self.__linked_vertices.append(link)
-
-    @property
-    def data(self):
-        return self.__data
-
-    @property
-    def linked_vertices(self):
-        return self.__linked_vertices
-
-    ##########DEBUG#############
-    def print_graph_vertice(self, d = {}):
-        if self.data in d:
-            print("Graph Vertice:", d[self.data], self.data)
-        for linked_vertice in self.__linked_vertices:
-            if linked_vertice.__data in d:
-                print("    Linked Vertice:", d[linked_vertice.__data], linked_vertice.__data)
-
-        """
-        for e in d:
-            if(self.data == d[e]):
-                print("Graph Vertice:", e)
-        for linked_vertice in self.__linked_vertices:
-            for e in d:
-                if(linked_vertice.__data == d[e]):
-                    print("    Linked Vertice:", e)
-        """
-
-        """
-        print("Graph Vertice:", self.data.qualname)
-        for linked_vertice in self.__linked_vertices:
-            print("    Linked Vertice:", linked_vertice.__data.qualname)
-        """
-
 def get_source_code_executed(function, function_graph):
     list_of_graph_vertices_not_yet_processed = []
     list_of_graph_vertices_already_processed = []
     source_codes_executed = []
 
-    print("function.__qual__name:", function.__qualname__)
+    print("function.__qualname__:", function.__qualname__)
 
-    for graph_vertice in function_graph.vertices:
-        current_function_def_node = graph_vertice.data
-        #if(current_function_def_node.name == function.__name__):
+    for current_function_def_node in function_graph:
         print("current_function_def_node.qualname:", current_function_def_node.qualname)
         if(current_function_def_node.qualname == function.__qualname__):
-            list_of_graph_vertices_not_yet_processed.append(graph_vertice)
+            list_of_graph_vertices_not_yet_processed.append(current_function_def_node)
             break
 
     while(len(list_of_graph_vertices_not_yet_processed) > 0):
         current_vertice = list_of_graph_vertices_not_yet_processed.pop(0)
 
-        source_codes_executed.append(ast.unparse(current_vertice.data))
+        source_codes_executed.append(ast.unparse(current_vertice))
 
-        for linked_vertice in current_vertice.linked_vertices:
+        for linked_vertice in function_graph[current_vertice]:
             if(linked_vertice not in list_of_graph_vertices_not_yet_processed and
             linked_vertice not in list_of_graph_vertices_already_processed and
             linked_vertice != current_vertice):

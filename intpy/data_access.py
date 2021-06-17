@@ -1,6 +1,7 @@
 import pickle
 import hashlib
 import os
+import threading
 
 from intpy.banco import Banco
 from intpy.logger.log import debug, warn
@@ -97,6 +98,37 @@ def _get_cache_data_v023x(id):
     return None
 
 
+def _populate_cached_data_dictionary():
+    db_connection = Banco(os.path.join(".intpy", "intpy.db"))
+    list_of_ipcache_files = db_connection.executarComandoSQLSelect("SELECT cache_file FROM CACHE")
+    for ipcache_file in list_of_ipcache_files:
+        ipcache_file = ipcache_file[0].replace(".ipcache", "")
+        
+        result = _deserialize(ipcache_file)
+        if(result is None):
+            continue
+        else:
+            with CACHED_DATA_DICTIONARY_SEMAPHORE:
+                DATA_DICTIONARY[ipcache_file] = result
+    db_connection.fecharConexao()
+
+CACHED_DATA_DICTIONARY_SEMAPHORE = threading.Semaphore()
+load_cached_data_dictionary_thread = threading.Thread(target=_populate_cached_data_dictionary)
+load_cached_data_dictionary_thread.start()
+
+def _get_cache_data_v024x(id):
+    #Checking if the result is saved in the cache
+    with CACHED_DATA_DICTIONARY_SEMAPHORE:
+        if(id in DATA_DICTIONARY):
+            return DATA_DICTIONARY[id]
+
+    #Checking if the result was already processed at this execution
+    if(id in NEW_DATA_DICTIONARY):
+        return NEW_DATA_DICTIONARY[id]
+
+    return None
+
+
 def _get_cache_data_v027x(id):
     #Checking if the result is stored in DATA_DICTIONARY
     if(id in DATA_DICTIONARY):
@@ -172,39 +204,15 @@ def get_cache_data(fun_name, fun_args, fun_source, argsp_v):
     elif argsp_v == ['2d-ad'] or argsp_v == ['v023x']:
         ret_get_cache_data_v023x = _get_cache_data_v023x(id)
         return ret_get_cache_data_v023x
+    elif argsp_v == ['2d-ad-t'] or argsp_v == ['v024x']:
+        ret_get_cache_data_v024x = _get_cache_data_v024x(id)
+        return ret_get_cache_data_v024x
     elif argsp_v == ['2d-ad-f'] or argsp_v == ['v025x']:
         ret_get_cache_data_v025x = _get_cache_data_v025x(id, fun_name)
         return ret_get_cache_data_v025x
     elif argsp_v == ['2d-lz'] or argsp_v == ['v027x']:
         ret_get_cache_data_v027x = _get_cache_data_v027x(id)
         return ret_get_cache_data_v027x
-
-"""
-    if argsp_v == ['1d-ad'] or argsp_v == ['v022x']:
-        list_of_ipcache_files = CONEXAO_BANCO.executarComandoSQLSelect("SELECT cache_file FROM CACHE")
-        for ipcache_file in list_of_ipcache_files:
-            ipcache_file = ipcache_file[0].replace(".ipcache", "")
-        
-            result = _deserialize(ipcache_file)
-            if(result is None):
-                continue
-            else:
-                DATA_DICTIONARY[ipcache_file] = result
-
-
-    if(id in DATA_DICTIONARY):
-        return DATA_DICTIONARY[id]
-    
-    if argsp_v == ['1d-ad'] or argsp_v == ['v022x']:
-        return None
-    elif argsp_v == ['1d-ow'] or argsp_v == ['v021x']:
-        list_file_name = _get(_get_file_name(id))
-        file_name = None
-        if(len(list_file_name) == 1):
-            file_name = list_file_name[0]
-        return _deserialize(id) if file_name is not None else None
-###COMPARAR, COMPLETAR, TESTAR
-"""
 
 
 def _deserialize(id):
@@ -230,7 +238,7 @@ def create_entry(fun_name, fun_args, fun_return, fun_source, argsp_v):
     id = _get_id(fun_name, fun_args, fun_source)
     if argsp_v == ['1d-ow'] or argsp_v == ['v021x'] or argsp_v == ['1d-ow'] or argsp_v == ['v021x']:
         DATA_DICTIONARY[id] = fun_return
-    elif argsp_v == ['2d-ad'] or argsp_v == ['v023x'] or argsp_v == ['2d-lz'] or argsp_v == ['v027x']:
+    elif argsp_v == ['2d-ad'] or argsp_v == ['v023x'] or argsp_v == ['2d-ad-t'] or argsp_v == ['v024x'] or argsp_v == ['2d-lz'] or argsp_v == ['v027x']:
         NEW_DATA_DICTIONARY[id] = fun_return
     elif  argsp_v == ['2d-ad-f'] or argsp_v == ['v025x']:
         NEW_DATA_DICTIONARY[id] = (fun_return, fun_name)
@@ -250,7 +258,7 @@ def salvarNovosDadosBanco(argsp_v):
             debug("inserting reference in database")
             _save(_get_file_name(id))
     
-    elif argsp_v == ['2d-ad'] or argsp_v == ['v023x'] or argsp_v == ['2d-lz'] or argsp_v == ['v027x']:
+    elif argsp_v == ['2d-ad'] or argsp_v == ['v023x'] or argsp_v == ['2d-ad-t'] or argsp_v == ['v024x'] or argsp_v == ['2d-lz'] or argsp_v == ['v027x']:
         for id in NEW_DATA_DICTIONARY:
             debug("serializing return value from {0}".format(id))
             _serialize(NEW_DATA_DICTIONARY[id], id)

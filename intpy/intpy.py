@@ -71,7 +71,7 @@ def _cache_exists(cache):
 def _cache_data(func, fun_args, fun_return, elapsed_time):
     debug("starting caching data for {0}({1})".format(func.__name__, fun_args))
     start = time.perf_counter()
-    create_entry(func.__name__, fun_args, fun_return, inspect.getsource(func))
+    create_entry(func.__name__, fun_args, fun_return, inspect.getsource(func), argsp_v)
     end = time.perf_counter()
     debug("caching {0} took {1}".format(func.__name__, end - start))
 
@@ -129,4 +129,4 @@ def _is_method(f):
 
 
 def _salvarCache():
-    salvarNovosDadosBanco()
+    salvarNovosDadosBanco(argsp_v)

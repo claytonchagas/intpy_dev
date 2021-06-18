@@ -32,8 +32,8 @@ def initialize_intpy(user_script_path):
                 #init_env()
             f(*method_args, **method_kwargs)
             #rever a lógica abaixo
-            if not argsp_no_cache or argsp_v != ['v01x']:
-            #if not argsp_no_cache:
+            #if not argsp_no_cache or argsp_v != ['v01x']:
+            if not argsp_no_cache:
                 _salvarCache()
         return execution
     return decorator

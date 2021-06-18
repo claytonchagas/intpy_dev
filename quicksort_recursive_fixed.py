@@ -1,8 +1,8 @@
-#test_quicksort_rec_fixed.py
+#quicksort_recursive_fixed.py
 
 import time
 
-from intpy.intpy import deterministic
+from intpy.intpy import initialize_intpy, deterministic
 
 
 @deterministic

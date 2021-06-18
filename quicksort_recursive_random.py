@@ -1,10 +1,10 @@
-#test_quicksort_rec_random.py
+#quicksort_recursive_random.py
 
 import time
-import random
+import sys
 import numpy as np
 
-from intpy.intpy import deterministic
+from intpy.intpy import initialize_intpy, deterministic
 
 
 @deterministic

@@ -1,4 +1,4 @@
-#test_fib_it.py
+#power_recursive.py
 
 import time
 import sys
@@ -7,20 +7,19 @@ from intpy.intpy import initialize_intpy, deterministic
 
 
 @deterministic
-def fib(n):
-    a,b = 0,1
-    for i in range(n):
-        a,b = b,a+b
-    return a
+def pow(n, m):
+    if m == 0:
+        return 1
+    return n*pow(n, m-1)
 
 
 @initialize_intpy(__file__)
-def main(n):
-    print(fib(n))
+def main(n, m):
+    print(pow(n, m))
 
 
 if __name__ == "__main__":
-    n = int(sys.argv[1])
+    n, m = int(sys.argv[1]), int(sys.argv[2])
     start = time.perf_counter()
-    main(n)
+    main(n, m)
     print(time.perf_counter()-start)

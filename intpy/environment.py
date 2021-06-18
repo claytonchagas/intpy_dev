@@ -1,9 +1,8 @@
 import os
-import ctypes
-
+#import ctypes
 from .banco import Banco
-from intpy.logger.log import debug
 
+from intpy.logger.log import debug
 
 FOLDER_NAME = ".intpy"
 CACHE_FOLDER_NAME = FOLDER_NAME + "/cache"
@@ -26,7 +25,7 @@ def _create_folder():
         return
 
     os.makedirs(FOLDER_NAME)
-    # ctypes.windll.kernel32.SetFileAttributesW(FOLDER_NAME, HIDDEN)
+    #ctypes.windll.kernel32.SetFileAttributesW(FOLDER_NAME, HIDDEN)
 
 
 def init_env():
@@ -52,7 +51,7 @@ def _create_database():
 
 def _create_table():
     debug("creating table")
-    conn = Banco('.intpy/intpy.db')
+    conexaoBanco = Banco('.intpy/intpy.db')
 
     stmt = "CREATE TABLE IF NOT EXISTS CACHE (\
     id INTEGER PRIMARY KEY AUTOINCREMENT,\
@@ -60,9 +59,9 @@ def _create_table():
     fun_name TEXT\
     );"
 
-    conn.executeCmdSQLNoReturn(stmt)
+    conexaoBanco.executarComandoSQLSemRetorno(stmt)
 
-    conn.closeConection()
+    conexaoBanco.fecharConexao()
 
 
 def _db_exists():

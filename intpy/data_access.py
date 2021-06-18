@@ -85,6 +85,13 @@ def _get_id(fun_name, fun_args, fun_source):
     return hashlib.md5((fun_name + str(fun_args) + fun_source).encode('utf')).hexdigest()
 
 
+
+def _get_cache_data_v01x(id):
+    file_name = _get(_get_file_name(id))
+    #return None
+    return _deserialize(id) if file_name is not None else None
+
+
 def _get_cache_data_v021x(id):
     #Verificando se há dados salvos em DATA_DICTIONARY
     if(id in DATA_DICTIONARY):
@@ -244,7 +251,11 @@ def _get_cache_data_v027x(id):
 def get_cache_data(fun_name, fun_args, fun_source, argsp_v):
     id = _get_id(fun_name, fun_args, fun_source)
 
-    if argsp_v == ['1d-ow'] or ['v021x']:
+    if argsp_v == ['v01x']:
+        ret_get_cache_data_v01x = _get_cache_data_v01x(id)
+        #print(argsp_v)
+        return ret_get_cache_data_v01x
+    elif argsp_v == ['1d-ow'] or ['v021x']:
         ret_get_cache_data_v021x = _get_cache_data_v021x(id)
         return ret_get_cache_data_v021x
     elif argsp_v == ['1d-ad'] or ['v022x']:

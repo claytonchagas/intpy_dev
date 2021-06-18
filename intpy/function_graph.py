@@ -26,7 +26,6 @@ class Experiment():
 
 
 class Script():
-    #
     def __init__(self, name = "", AST = None, import_commands = set(), functions = {}, function_graph = None):
         self.__name = name
         self.__AST = AST
@@ -34,7 +33,7 @@ class Script():
         self.__functions = functions
         self.__function_graph = function_graph
 
-    #
+    
     def import_command_to_imported_scripts_names(self, import_command):
         def script_name_to_script_path(script_name):
             script_path = script_name[0]
@@ -169,6 +168,22 @@ class Script():
         self.__function_graph = function_graph
 
 
+def get_all_init_scripts_implicitly_imported(imported_script, experiment_base_dir):
+    init_scripts_implicitly_imported = set()
+    if(imported_script.rfind(os.sep) != -1):
+        current_init_script = imported_script[0:imported_script.rfind(os.sep) + 1] + "__init__.py"
+        print("current_init_script:", current_init_script)
+        while(current_init_script != "__init__.py"):
+            if(os.path.exists(get_script_path(current_init_script, experiment_base_dir))):
+                init_scripts_implicitly_imported.add(current_init_script)
+            current_init_script = current_init_script.split(os.sep)
+            current_init_script.pop(-2)
+            current_init_script = os.sep.join(current_init_script)
+            #current_init_script = os.sep.join(current_init_script.split(os.sep).pop(-2))
+        print("init_scripts_implicitly_imported:", init_scripts_implicitly_imported)
+    return init_scripts_implicitly_imported
+
+
 def create_experiment_function_graph(user_script_path):
     def script_already_analized(script):
         return script in scripts_analized
@@ -217,7 +232,11 @@ def create_experiment_function_graph(user_script_path):
             if(is_an_user_defined_script(imported_script, experiment_base_dir) and
             not script_already_analized(imported_script)):
                 scripts_to_be_analized.append(imported_script)
-    
+                for init_scripts in get_all_init_scripts_implicitly_imported(imported_script, experiment_base_dir):
+                    if(is_an_user_defined_script(init_scripts, experiment_base_dir) and
+                    not script_already_analized(init_scripts)):
+                        scripts_to_be_analized.append(init_scripts)
+
         scripts_analized[script_name] = script_ASTSearcher
     
     

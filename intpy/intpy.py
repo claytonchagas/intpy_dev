@@ -23,21 +23,6 @@ if not argsp_no_cache:
     from intpy.data_access import get_cache_data, create_entry, salvarNovosDadosBanco
 
 
-"""
-v_data_access_import = importlib.import_module(v_data_access, package="intpy")
-print(v_data_access_import)
-
-f_get_cache_data = getattr(v_data_access_import, "get_cache_data")
-print(f_get_cache_data)
-
-f_create_entry = getattr(v_data_access_import, "create_entry")
-print(f_create_entry)
-
-f_salvarNovosDadosBanco = getattr(v_data_access_import, "salvarNovosDadosBanco")
-print(f_salvarNovosDadosBanco)
-"""
-
-
 #On the decorator "initialize_intpy", "user_script_path" is declared
 #to maintain compatibility between different versions of IntPy
 def initialize_intpy(user_script_path):

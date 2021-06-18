@@ -40,7 +40,6 @@ def init_env():
     _create_database()
 
 
-
 def _create_database():
     debug("creating database")
     if _db_exists():

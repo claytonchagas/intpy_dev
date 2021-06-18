@@ -5,9 +5,11 @@ class Experiment():
         self.__experiment_base_dir = experiment_base_dir
         self.__scripts = {}
     
+
     def add_script(self, script):
         self.__scripts[script.name] = script
     
+
     #####DEBUG#####
     def print(self):
         print("###EXPERIMENT###")
@@ -16,10 +18,12 @@ class Experiment():
         for script in self.__scripts.values():
             script.print()
 
+
     @property
     def experiment_base_dir(self):
         return self.__experiment_base_dir
-    
+
+
     @property
     def scripts(self):
         return self.__scripts
@@ -58,14 +62,14 @@ class Script():
             
         return imported_scripts_names
 
-    #
+    
     def get_imported_scripts(self):
         imported_scripts = []
         for import_command in self.__import_commands:
             imported_scripts += self.import_command_to_imported_scripts_names(import_command)
         return imported_scripts
 
-    #
+    
     def get_user_defined_imported_scripts(self, experiment_base_dir):
         imported_scripts = self.get_imported_scripts()
         user_defined_imported_scripts = []
@@ -74,7 +78,7 @@ class Script():
                 user_defined_imported_scripts.append(imported_script)
         return user_defined_imported_scripts
 
-    #
+    
     def get_import_command_of_function(self, function_name):
         if(function_name.find(".") == -1):
             for import_command in self.__import_commands:
@@ -93,8 +97,9 @@ class Script():
                             return import_command
         return None
 
-    #COLLAPSE THE FUNCTIONS
-    #
+    #MAYBE IN THE FUTURE "get_original_name_of_script_imported_with_import" AND 
+    #"get_original_name_of_function_imported_with_import_from" CAN BE COLLAPSED
+    #IN ONE FUNCTION
     def get_original_name_of_script_imported_with_import(self, import_command, function_name):
         script_name = function_name[:function_name.rfind(".")]
         for alias in import_command.names:
@@ -103,7 +108,7 @@ class Script():
                 return alias.name
         return None
 
-    #
+    
     def get_original_name_of_function_imported_with_import_from(self, import_from_command, function_name):
         for alias in import_from_command.names:
             function_imported_name = alias.asname if alias.asname is not None else alias.name
@@ -111,11 +116,12 @@ class Script():
                 return alias.name
         return None
 
-    #
+    
     def get_function(self, function_name):
         if(function_name in self.__functions):
             return self.__functions[function_name]
         return None
+
 
     ###DEBUG####
     def print(self):
@@ -124,45 +130,59 @@ class Script():
         print("AST:", self.__AST)
         print("Import Commands:", self.__import_commands)
         print("Functions:", self.__functions)
-        print("Function Graph:", self.__function_graph)
+        print("Function Graph:")
+        if(self.__function_graph is not None):
+            for function in self.__function_graph:
+                print(3*" ", function.qualname, function)
+                for link in self.__function_graph[function]:
+                    print(6*" ", link.qualname, link)
 
 
     @property
     def name(self):
         return self.__name
     
+
     @name.setter
     def name(self, name):
         self.__name = name
 
+
     @property
     def AST(self):
         return self.__AST
-    
+
+
     @AST.setter
     def AST(self, AST):
         self.__AST = AST
+
 
     @property
     def import_commands(self):
         return self.__import_commands
     
+
     @import_commands.setter
     def import_commands(self, import_commands):
         self.__import_commands = import_commands
+
 
     @property
     def functions(self):
         return self.__functions
 
+
     @functions.setter
     def functions(self, functions):
         self.__functions = functions
     
+
     @property
     def function_graph(self):
         return self.__function_graph
  
+
     @function_graph.setter
     def function_graph(self, function_graph):
         self.__function_graph = function_graph
@@ -171,16 +191,16 @@ class Script():
 def get_all_init_scripts_implicitly_imported(imported_script, experiment_base_dir):
     init_scripts_implicitly_imported = set()
     if(imported_script.rfind(os.sep) != -1):
-        current_init_script = imported_script[0:imported_script.rfind(os.sep) + 1] + "__init__.py"
-        print("current_init_script:", current_init_script)
-        while(current_init_script != "__init__.py"):
-            if(os.path.exists(get_script_path(current_init_script, experiment_base_dir))):
-                init_scripts_implicitly_imported.add(current_init_script)
-            current_init_script = current_init_script.split(os.sep)
-            current_init_script.pop(-2)
-            current_init_script = os.sep.join(current_init_script)
-            #current_init_script = os.sep.join(current_init_script.split(os.sep).pop(-2))
-        print("init_scripts_implicitly_imported:", init_scripts_implicitly_imported)
+        current_init_script_path = imported_script[0:imported_script.rfind(os.sep) + 1] + "__init__.py"
+        while(current_init_script_path != "__init__.py"):
+            if(os.path.exists(get_script_path(current_init_script_path, experiment_base_dir))):
+                init_scripts_implicitly_imported.add(current_init_script_path)
+            current_init_script_path = current_init_script_path.split(os.sep)
+            current_init_script_path.pop(-2)
+            current_init_script_path = os.sep.join(current_init_script_path)
+    
+    print("init_scripts_implicitly_imported:", init_scripts_implicitly_imported)
+    
     return init_scripts_implicitly_imported
 
 
@@ -244,23 +264,11 @@ def create_experiment_function_graph(user_script_path):
     experiment.print()
     print("\n\n\n")        
 
-    """
-    #################MODIFICAR O GRAFO
-    user_experiment = Experiment(experiment_base_dir)
-    for script_name in scripts_analized:
-        script_ASTSearcher = scripts_analized[script_name]
-        
-        for function_name in script_ASTSearcher.functions:
-            function = script_ASTSearcher.functions[function_name]
-            function.qualname = function_name
-        
-        user_experiment.add_script(Script(script_name, script_ASTSearcher.AST, script_ASTSearcher.import_commands, script_ASTSearcher.functions))
-    """
     experimentFunctionGraphCreator = ExperimentFunctionGraphCreator(experiment)
     experimentFunctionGraphCreator.create_experiment_function_graph()
     return experimentFunctionGraphCreator.experiment_function_graph
     
-#
+
 def python_code_to_AST(file_name):
     try:
         #Opening file
@@ -281,11 +289,11 @@ def python_code_to_AST(file_name):
             print("Check if your Python script is correctly writen.")
             return None
 
-#
+
 def get_script_path(script_name, experiment_base_dir):
     return os.path.join(experiment_base_dir, script_name)
 
-#
+
 def is_an_user_defined_script(imported_script, experiment_base_dir):
     return os.path.exists(get_script_path(imported_script, experiment_base_dir)) and imported_script.find("intpy") == -1
 
@@ -296,6 +304,7 @@ class ASTSearcher(ast.NodeVisitor):
         self.__import_commands = []
         self.__functions = {}
 
+
     def search(self):
         #Finding all declared functions and imported modules
         #in the AST
@@ -304,20 +313,24 @@ class ASTSearcher(ast.NodeVisitor):
         self.__current_function_name = ""
         self.visit(self.__AST)
 
+
     def visit_Import(self, node):
         if(node not in self.__import_commands):
             self.__import_commands.append(node)
         self.generic_visit(node)
-    
+
+
     def visit_ImportFrom(self, node):
         if(node not in self.__import_commands):
             self.__import_commands.append(node)
         self.generic_visit(node)
-    
+
+
     def visit_ClassDef(self, node):
         """This function avoids that child nodes of a ClassDef node
         (ex.: class methods) be visited during search"""
-        
+
+
     def visit_FunctionDef(self, node):
         previous_function_name = self.__current_function_name
         self.__current_function_name = node.name if self.__current_function_name == "" else self.__current_function_name + ".<locals>." + node.name
@@ -333,13 +346,16 @@ class ASTSearcher(ast.NodeVisitor):
         self.__current_function = previous_function
         self.__current_function_name = previous_function_name
 
+
     @property
     def AST(self):
         return self.__AST
 
+
     @property
     def import_commands(self):
         return self.__import_commands
+
 
     @property
     def functions(self):
@@ -351,7 +367,7 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
         self.__experiment = experiment
         self.__experiment_function_graph = {}
 
-    #
+    
     def __initialize_script_function_graph(self, script, imported_scripts_names):
         script_function_graph = {}
         for imported_script_name in imported_scripts_names:
@@ -360,21 +376,20 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
             script_function_graph[function] = set()
         return script_function_graph
 
-    #
+    
     def create_experiment_function_graph(self):
         self.__experiment_function_graph = self.__create_script_function_graph("__main__")
+
         print("EXPERIMENT GRAPH")
         print(self.__experiment_function_graph)
 
 
-    #
     def __create_user_defined_imported_scripts_function_graphs(self, user_defined_imported_scripts):
         for user_defined_imported_script in user_defined_imported_scripts:
             self.__create_script_function_graph(user_defined_imported_script)
 
 
     def __create_script_function_graph(self, script_name):
-        #try:
         script = self.__experiment.scripts[script_name]
 
         user_defined_imported_scripts = script.get_user_defined_imported_scripts(self.__experiment.experiment_base_dir)
@@ -407,9 +422,6 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
             for link in self.__script_function_graph[function]:
                 print(6*" ", link.qualname, link)
         return self.__script_function_graph
-
-        #except Exception:
-        #   raise RuntimeError("Un unexpected error occurred while trying to create the experiment function graph!")
 
 
     def visit_ClassDef(self, node):
@@ -479,7 +491,8 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
             print("possible_functions_called:", possible_functions_called)
 
             return possible_functions_called
-        
+
+
         def find_function_called(function_called_name, possible_functions_called):
             number_of_possible_functions_called = len(possible_functions_called)
             if(number_of_possible_functions_called == 0):
@@ -552,10 +565,12 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
                 self.__script_function_graph[self.__current_function].add(function_called)
 
         self.generic_visit(node)
-    
+
+
     @property
     def experiment_function_graph(self):
         return self.__experiment_function_graph
+
 
 def get_source_code_executed(function, function_graph):
     list_of_graph_vertices_not_yet_processed = []

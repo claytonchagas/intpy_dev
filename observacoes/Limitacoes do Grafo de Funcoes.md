@@ -5,4 +5,6 @@ Limitações da implementação do grafo de funções:
             É permitido: from random import random as rd
             Não é permitido: from random import *
     
-    2)Analisar casos em que o import realizado é feito em uma pasta que contém o arquivo __init__.py
+    2)Para os casos em que um comando import importa um script e também um arquivo __init__.py, é necessário explicitamente importar o arquivo __init__.py(necessário para que a classe que busca informações na AST realize sua análise corretamente)
+
+A implementação do módulo function_graph pode ser melhorada mediante uma refatoração das estruturas de dados utilizadas (algumas vezes são utilizadas listas quando poderiam ser utilizados sets, outras vezes é possível melhorar a recuperação de informações alterando o modo como elas são armazenadas na estrutura de dados)

@@ -9,7 +9,7 @@ $ python "+str(sys.argv[0])+" program_arguments [-h] [-v version, --version vers
 To run in the IntPy DEBUG mode use:\n\
 $ DEBUG=True python "+str(sys.argv[0])+" program_arguments [-h] [-v version, --version version] [--no-cache]\n\n\
 Glossary of the versions:\n\
-    =>v01x             : original version with some bug fixes and instrumentation, all data are stored directly in the database.\
+    =>v01x             : original version with some bug fixes and instrumentation, all data are stored directly in the database.\n\
     =>1d-ow    or v021x: one dicionary (1d), only write (ow), 1st implementation of dictionary: new data is added to the dictionary only when cache miss occur and the function decorated with @deterministic is executed.\n\
     =>1d-ad    or v022x: one dicionary (1d), all data loaded at the begining (ad), 2nd implementation of dictionary (uses 1 dictionary): at the begining of the execution all the data cached is loaded to the dictonary before the user script starts to run.\n\
     =>2d-ad    or v023x: two dicionaries (2d), all data loaded at the begining (ad), 3rd implementation of dictionary (uses 2 dictionaries): at the begining of the execution all the data cached is loaded to the dictionary DATA_DICTIONARY before the user script starts to run. When cache miss occurs and a function decorated with @deterministic is processed, its result is stored in NEW_DATA_DICTIONARY. This way, only the elements of NEW_DATA_DICTIONARY are added to the database at the end of the execution.\n\

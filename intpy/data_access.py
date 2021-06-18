@@ -46,6 +46,8 @@ def _populate_cached_data_dictionary():
                 DATA_DICTIONARY[ipcache_file] = result
     db_connection.fecharConexao()
 
+
+#separar em duas funcoes separadas e chamadas em intpy.py
 if argsp_v == ['1d-ad'] or ['v022x'] or ['2d-ad'] or ['v023x']:
     list_of_ipcache_files = CONEXAO_BANCO.executarComandoSQLSelect("SELECT cache_file FROM CACHE")
     for ipcache_file in list_of_ipcache_files:
@@ -65,6 +67,7 @@ def _save(file_name):
     CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT OR IGNORE INTO CACHE(cache_file) VALUES ('{0}')".format(file_name))
 
 #Versão desenvolvida por causa do _save em salvarNovosDadosBanco para a v0.2.5.x e a v0.2.6.x, com o nome da função
+#Testar se existe a sobrecarga
 def _save_fun_name(file_name, fun_name):
     CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT OR IGNORE INTO CACHE(cache_file, fun_name) VALUES ('{0}', '{1}')".format(file_name, fun_name))
 
@@ -220,6 +223,7 @@ def _get_cache_data_v026x(id, fun_name):
     return None
 
 
+#Comparavel a versão v021x mas com 2 dicionarios
 def _get_cache_data_v027x(id):
     #Checking if the result is stored in DATA_DICTIONARY
     if(id in DATA_DICTIONARY):
@@ -288,7 +292,7 @@ def _autofix(id):
 # Aqui misturam as versões v0.2.1.x a v0.2.7.x
 def create_entry(fun_name, fun_args, fun_return, fun_source, argsp_v):
     id = _get_id(fun_name, fun_args, fun_source)
-    if argsp_v == ['1d-ow'] or ['v021x'] or ['1d-ow'] or ['v021x']:
+    if argsp_v == ['1d-ow'] or ['v021x'] or ['1d-ad'] or ['v022x']:
         DATA_DICTIONARY[id] = fun_return
     elif argsp_v == ['2d-ad'] or ['v023x'] or ['2d-ad-t'] or ['v024x'] or ['2d-lz'] or ['v027x']:
         NEW_DATA_DICTIONARY[id] = fun_return
@@ -302,7 +306,7 @@ def salvarNovosDadosBanco(argsp_v):
         with open(".intpy/cache/{0}".format(_get_file_name(file_name)), 'wb') as file:
             return pickle.dump(return_value, file, protocol=pickle.HIGHEST_PROTOCOL)
 
-    if argsp_v == ['1d-ow'] or['v021x'] or ['1d-ow'] or ['v021x']:
+    if argsp_v == ['1d-ow'] or['v021x'] or ['1d-ad'] or ['v022x']:
         for id in DATA_DICTIONARY:
             debug("serializing return value from {0}".format(id))
             _serialize(DATA_DICTIONARY[id], id)

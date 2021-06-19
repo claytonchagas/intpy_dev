@@ -76,67 +76,48 @@ def _serialize(return_value, file_name):
 
 
 def _get_cache_data_v01x(id):
-    print("RECUPERANDO ENTRADA V01X!")
     global CONEXAO_BANCO
     CONEXAO_BANCO = Banco(os.path.join(".intpy", "intpy.db"))
     list_file_name = _get(_get_file_name(id))
     CONEXAO_BANCO.fecharConexao()
-    print(list_file_name)
     return _deserialize(id) if len(list_file_name) == 1 else None
 
 
 def _get_cache_data_v021x(id):
-    print("RECUPERANDO ENTRADA V021X!")
-
     #Nesta versão, DATA_DICTIONARY armazena os dados novos ainda não
     #persistidos no banco de dados
     if(id in DATA_DICTIONARY):
         return DATA_DICTIONARY[id]
     list_file_name = _get(_get_file_name(id))
-    print(list_file_name)
     return _deserialize(id) if len(list_file_name) == 1 else None
 
 
 def _get_cache_data_v022x(id):
-    print("RECUPERANDO ENTRADA V022X!")
     #Nesta versão, DATA_DICTIONARY armazena os dados novos ainda não
     #persistidos no banco de dados e os dados já persitidos no banco de dados
     if(id in DATA_DICTIONARY):
-        print("CACHE HIT")
         return DATA_DICTIONARY[id]
-    print("CACHE MISS")
     return None
 
 
 def _get_cache_data_v023x(id):
-    print("RECUPERANDO ENTRADA V023X!")
-
     if(id in DATA_DICTIONARY):
         return DATA_DICTIONARY[id]    
     if(id in NEW_DATA_DICTIONARY):
         return NEW_DATA_DICTIONARY[id]
-    print("CACHE MISS")
     return None
 
 
 def _get_cache_data_v024x(id):
-    print("RECUPERANDO ENTRADA V024X!")
-
     with CACHED_DATA_DICTIONARY_SEMAPHORE:
         if(id in DATA_DICTIONARY):
             return DATA_DICTIONARY[id]
     if(id in NEW_DATA_DICTIONARY):
         return NEW_DATA_DICTIONARY[id]
-    print("CACHE MISS")
     return None
 
 
 def _get_cache_data_v025x(id, fun_name):
-    print("RECUPERANDO ENTRADA V025X!")
-    print("FUNCTIONS_ALREADY_SELECTED_FROM_DB:", FUNCTIONS_ALREADY_SELECTED_FROM_DB)
-    print("DATA_DICTIONARY:", DATA_DICTIONARY)
-
-
     if(fun_name in FUNCTIONS_ALREADY_SELECTED_FROM_DB):
         if(id in DATA_DICTIONARY):
             return DATA_DICTIONARY[id]
@@ -145,9 +126,6 @@ def _get_cache_data_v025x(id, fun_name):
             #(retorno_da_funcao, nome_da_funcao)
             return NEW_DATA_DICTIONARY[id][0]
     else:
-        print("Searching function in the database:", fun_name)
-
-
         list_file_names = _get_fun_name(fun_name)
         for file_name in list_file_names:
             file_name = file_name[0].replace(".ipcache", "")
@@ -159,22 +137,12 @@ def _get_cache_data_v025x(id, fun_name):
                 DATA_DICTIONARY[file_name] = result
 
         FUNCTIONS_ALREADY_SELECTED_FROM_DB.append(fun_name)
-
-        print("FUNCTIONS_ALREADY_SELECTED_FROM_DB:", FUNCTIONS_ALREADY_SELECTED_FROM_DB)
-        print("DATA_DICTIONARY:", DATA_DICTIONARY)
-
         if(id in DATA_DICTIONARY):
             return DATA_DICTIONARY[id]
-    print("CACHE MISS")
     return None
 
 
 def _get_cache_data_v026x(id, fun_name):
-    print("RECUPERANDO ENTRADA V026X!")
-    print("FUNCTIONS_ALREADY_SELECTED_FROM_DB:", FUNCTIONS_ALREADY_SELECTED_FROM_DB)
-    print("DATA_DICTIONARY:", DATA_DICTIONARY)
-
-
     if(fun_name in FUNCTIONS_ALREADY_SELECTED_FROM_DB):
         with CACHED_DATA_DICTIONARY_SEMAPHORE:
             if(id in DATA_DICTIONARY):
@@ -184,8 +152,7 @@ def _get_cache_data_v026x(id, fun_name):
             #(retorno_da_funcao, nome_da_funcao)
             return NEW_DATA_DICTIONARY[id][0]
     else:
-        FUNCTIONS_ALREADY_SELECTED_FROM_DB.append(fun_name)
-        
+        FUNCTIONS_ALREADY_SELECTED_FROM_DB.append(fun_name)        
         id_file_name = _get_file_name(id)
         list_file_names = _get_fun_name(fun_name)
         for file_name in list_file_names:
@@ -198,15 +165,11 @@ def _get_cache_data_v026x(id, fun_name):
         
         thread = threading.Thread(target=add_new_data_to_CACHED_DATA_DICTIONARY, args=(list_file_names,))
         thread.start()
-    print("CACHE MISS")
     return None
 
 
 #Comparável à versão v021x, mas com 2 dicionários
 def _get_cache_data_v027x(id):
-    print("RECUPERANDO ENTRADA V027X!")
-    print("DATA_DICTIONARY:", DATA_DICTIONARY)
-
     if(id in DATA_DICTIONARY):
         return DATA_DICTIONARY[id]
     if(id in NEW_DATA_DICTIONARY):
@@ -216,17 +179,11 @@ def _get_cache_data_v027x(id):
     result = _deserialize(id) if len(list_file_name) == 1 else None
     if(result is not None):
         DATA_DICTIONARY[id] = result
-        
-        print("CACHE HIT")
-    print("CACHE MISS")
     return result
 
 
 # Aqui misturam as versões v0.2.1.x a v0.2.7.x e v01x
 def get_cache_data(fun_name, fun_args, fun_source, argsp_v):
-
-    print("RECUPERAR {0}({1})".format(fun_name, fun_args))
-
     id = _get_id(fun_name, fun_args, fun_source)
 
     if(argsp_v == ['v01x']):
@@ -256,8 +213,6 @@ def get_cache_data(fun_name, fun_args, fun_source, argsp_v):
 
 
 def add_new_data_to_CACHED_DATA_DICTIONARY(list_file_names):
-    print("ADICIONANDO DADOS DA FUNÇÃO VIA THREAD!")
-
     for file_name in list_file_names:
         file_name = file_name[0].replace(".ipcache", "")
         
@@ -267,8 +222,6 @@ def add_new_data_to_CACHED_DATA_DICTIONARY(list_file_names):
         else:
             with CACHED_DATA_DICTIONARY_SEMAPHORE:
                 DATA_DICTIONARY[file_name] = result
-    
-    print("DATA_DICTIONARY", DATA_DICTIONARY)
 
 
 # Aqui misturam as versões v0.2.1.x a v0.2.7.x e v01x
@@ -277,8 +230,6 @@ def create_entry(fun_name, fun_args, fun_return, fun_source, argsp_v):
     if argsp_v == ['v01x']:
         global CONEXAO_BANCO
         CONEXAO_BANCO = Banco(os.path.join(".intpy", "intpy.db"))
-        print("CRIANDO ENTRADA V01X!")
-        print(fun_args)
         debug("serializing return value from {0}".format(id))
         _serialize(fun_return, id)
         debug("inserting reference in database")
@@ -288,16 +239,13 @@ def create_entry(fun_name, fun_args, fun_return, fun_source, argsp_v):
 
     elif(argsp_v == ['1d-ow'] or argsp_v == ['v021x'] or
         argsp_v == ['1d-ad'] or argsp_v == ['v022x']):
-        print("CRIANDO ENTRADA V021X OU V022X!")
         DATA_DICTIONARY[id] = fun_return
     elif(argsp_v == ['2d-ad'] or argsp_v == ['v023x'] or 
         argsp_v == ['2d-ad-t'] or argsp_v == ['v024x'] or
         argsp_v == ['2d-lz'] or argsp_v == ['v027x']):
-        print("CRIANDO ENTRADA V023X OU V024X OU V027X!")
         NEW_DATA_DICTIONARY[id] = fun_return
     elif(argsp_v == ['2d-ad-f'] or argsp_v == ['v025x'] or
         argsp_v == ['2d-ad-ft'] or argsp_v == ['v026x']):
-        print("CRIANDO ENTRADA V025X OU V026X!")
         NEW_DATA_DICTIONARY[id] = (fun_return, fun_name)
 
 
@@ -305,35 +253,26 @@ def create_entry(fun_name, fun_args, fun_return, fun_source, argsp_v):
 def salvarNovosDadosBanco(argsp_v):
     if(argsp_v == ['1d-ow'] or argsp_v == ['v021x'] or
         argsp_v == ['1d-ad'] or argsp_v == ['v022x']):
-        print("SALVANDO DADOS V021X OU V022X!")
-        print("DATA_DICTIONARY:", DATA_DICTIONARY)
         for id in DATA_DICTIONARY:
             debug("serializing return value from {0}".format(id))
             _serialize(DATA_DICTIONARY[id], id)
-
             debug("inserting reference in database")
             _save(_get_file_name(id))
     
     elif(argsp_v == ['2d-ad'] or argsp_v == ['v023x'] or
         argsp_v == ['2d-ad-t'] or argsp_v == ['v024x'] or
         argsp_v == ['2d-lz'] or argsp_v == ['v027x']):
-        print("SALVANDO DADOS V023X OU V024X OU V027X!")
-        print("NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
         for id in NEW_DATA_DICTIONARY:
             debug("serializing return value from {0}".format(id))
             _serialize(NEW_DATA_DICTIONARY[id], id)
-
             debug("inserting reference in database")
             _save(_get_file_name(id))
     
     elif(argsp_v == ['2d-ad-f'] or argsp_v == ['v025x'] or
         argsp_v == ['2d-ad-ft'] or argsp_v == ['v026x']):
-        print("SALVANDO DADOS V025X OU V026X!")
-        print("NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
         for id in NEW_DATA_DICTIONARY:
             debug("serializing return value from {0}".format(id))
             _serialize(NEW_DATA_DICTIONARY[id][0], id)
-
             debug("inserting reference in database")
             _save_fun_name(_get_file_name(id), NEW_DATA_DICTIONARY[id][1])
 
@@ -343,7 +282,6 @@ def salvarNovosDadosBanco(argsp_v):
 
 if(g_argsp_v == ['1d-ad'] or g_argsp_v == ['v022x']
     or g_argsp_v == ['2d-ad'] or g_argsp_v == ['v023x']):
-    print("POPULANDO BANCO SEQUENCIALMENTE! V022X OU V023X!")
     def _populate_cached_data_dictionary():
         list_of_ipcache_files = CONEXAO_BANCO.executarComandoSQLSelect("SELECT cache_file FROM CACHE")
         for ipcache_file in list_of_ipcache_files:
@@ -354,9 +292,7 @@ if(g_argsp_v == ['1d-ad'] or g_argsp_v == ['v022x']
             else:
                 DATA_DICTIONARY[ipcache_file] = result
     _populate_cached_data_dictionary()
-    print("DATA_DICTIONARY:", DATA_DICTIONARY)
 elif(g_argsp_v == ['2d-ad-t'] or g_argsp_v == ['v024x']):
-    print("POPULANDO BANCO VIA THREAD! V024X!")
     def _populate_cached_data_dictionary():
         db_connection = Banco(os.path.join(".intpy", "intpy.db"))
         list_of_ipcache_files = db_connection.executarComandoSQLSelect("SELECT cache_file FROM CACHE")
@@ -370,8 +306,5 @@ elif(g_argsp_v == ['2d-ad-t'] or g_argsp_v == ['v024x']):
                 with CACHED_DATA_DICTIONARY_SEMAPHORE:
                     DATA_DICTIONARY[ipcache_file] = result
         db_connection.fecharConexao()
-        print("DATA_DICTIONARY:", DATA_DICTIONARY)
-
-
     load_cached_data_dictionary_thread = threading.Thread(target=_populate_cached_data_dictionary)
     load_cached_data_dictionary_thread.start()

@@ -205,7 +205,7 @@ def _get_cache_data_v026x(id, fun_name):
 #Comparável à versão v021x, mas com 2 dicionários
 def _get_cache_data_v027x(id):
     print("RECUPERANDO ENTRADA V027X!")
-
+    print("DATA_DICTIONARY:", DATA_DICTIONARY)
 
     if(id in DATA_DICTIONARY):
         return DATA_DICTIONARY[id]
@@ -216,6 +216,9 @@ def _get_cache_data_v027x(id):
     result = _deserialize(id) if len(list_file_name) == 1 else None
     if(result is not None):
         DATA_DICTIONARY[id] = result
+        
+        print("CACHE HIT")
+    print("CACHE MISS")
     return result
 
 

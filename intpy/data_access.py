@@ -127,11 +127,14 @@ def _get_cache_data_v024x(id):
             return DATA_DICTIONARY[id]
     if(id in NEW_DATA_DICTIONARY):
         return NEW_DATA_DICTIONARY[id]
+    print("CACHE MISS")
     return None
 
 
 def _get_cache_data_v025x(id, fun_name):
     print("RECUPERANDO ENTRADA V025X!")
+    print("FUNCTIONS_ALREADY_SELECTED_FROM_DB:", FUNCTIONS_ALREADY_SELECTED_FROM_DB)
+    print("DATA_DICTIONARY:", DATA_DICTIONARY)
 
 
     if(fun_name in FUNCTIONS_ALREADY_SELECTED_FROM_DB):
@@ -142,6 +145,9 @@ def _get_cache_data_v025x(id, fun_name):
             #(retorno_da_funcao, nome_da_funcao)
             return NEW_DATA_DICTIONARY[id][0]
     else:
+        print("Searching function in the database:", fun_name)
+
+
         list_file_names = _get_fun_name(fun_name)
         for file_name in list_file_names:
             file_name = file_name[0].replace(".ipcache", "")
@@ -154,13 +160,19 @@ def _get_cache_data_v025x(id, fun_name):
 
         FUNCTIONS_ALREADY_SELECTED_FROM_DB.append(fun_name)
 
+        print("FUNCTIONS_ALREADY_SELECTED_FROM_DB:", FUNCTIONS_ALREADY_SELECTED_FROM_DB)
+        print("DATA_DICTIONARY:", DATA_DICTIONARY)
+
         if(id in DATA_DICTIONARY):
             return DATA_DICTIONARY[id]
+    print("CACHE MISS")
     return None
 
 
 def _get_cache_data_v026x(id, fun_name):
     print("RECUPERANDO ENTRADA V026X!")
+    print("FUNCTIONS_ALREADY_SELECTED_FROM_DB:", FUNCTIONS_ALREADY_SELECTED_FROM_DB)
+    print("DATA_DICTIONARY:", DATA_DICTIONARY)
 
 
     if(fun_name in FUNCTIONS_ALREADY_SELECTED_FROM_DB):
@@ -175,7 +187,7 @@ def _get_cache_data_v026x(id, fun_name):
         FUNCTIONS_ALREADY_SELECTED_FROM_DB.append(fun_name)
         
         id_file_name = _get_file_name(id)
-        list_file_names = _get(fun_name)
+        list_file_names = _get_fun_name(fun_name)
         for file_name in list_file_names:
             if(file_name[0] == id_file_name):
                 thread = threading.Thread(target=add_new_data_to_CACHED_DATA_DICTIONARY, args=(list_file_names,))
@@ -186,6 +198,7 @@ def _get_cache_data_v026x(id, fun_name):
         
         thread = threading.Thread(target=add_new_data_to_CACHED_DATA_DICTIONARY, args=(list_file_names,))
         thread.start()
+    print("CACHE MISS")
     return None
 
 
@@ -251,6 +264,8 @@ def add_new_data_to_CACHED_DATA_DICTIONARY(list_file_names):
         else:
             with CACHED_DATA_DICTIONARY_SEMAPHORE:
                 DATA_DICTIONARY[file_name] = result
+    
+    print("DATA_DICTIONARY", DATA_DICTIONARY)
 
 
 # Aqui misturam as versões v0.2.1.x a v0.2.7.x e v01x
@@ -311,6 +326,7 @@ def salvarNovosDadosBanco(argsp_v):
     elif(argsp_v == ['2d-ad-f'] or argsp_v == ['v025x'] or
         argsp_v == ['2d-ad-ft'] or argsp_v == ['v026x']):
         print("SALVANDO DADOS V025X OU V026X!")
+        print("NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
         for id in NEW_DATA_DICTIONARY:
             debug("serializing return value from {0}".format(id))
             _serialize(NEW_DATA_DICTIONARY[id][0], id)
@@ -351,9 +367,8 @@ elif(g_argsp_v == ['2d-ad-t'] or g_argsp_v == ['v024x']):
                 with CACHED_DATA_DICTIONARY_SEMAPHORE:
                     DATA_DICTIONARY[ipcache_file] = result
         db_connection.fecharConexao()
+        print("DATA_DICTIONARY:", DATA_DICTIONARY)
+
 
     load_cached_data_dictionary_thread = threading.Thread(target=_populate_cached_data_dictionary)
     load_cached_data_dictionary_thread.start()
-
-
-    print("DATA_DICTIONARY:", DATA_DICTIONARY)

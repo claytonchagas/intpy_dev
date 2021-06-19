@@ -115,6 +115,7 @@ def _get_cache_data_v023x(id):
         return DATA_DICTIONARY[id]    
     if(id in NEW_DATA_DICTIONARY):
         return NEW_DATA_DICTIONARY[id]
+    print("CACHE MISS")
     return None
 
 
@@ -267,20 +268,25 @@ def create_entry(fun_name, fun_args, fun_return, fun_source, argsp_v):
         CONEXAO_BANCO.salvarAlteracoes()
         CONEXAO_BANCO.fecharConexao()
 
-    elif argsp_v == ['1d-ow'] or ['v021x'] or ['1d-ad'] or ['v022x']:
+    elif(argsp_v == ['1d-ow'] or argsp_v == ['v021x'] or
+        argsp_v == ['1d-ad'] or argsp_v == ['v022x']):
         print("CRIANDO ENTRADA V021X OU V022X!")
         DATA_DICTIONARY[id] = fun_return
-    elif argsp_v == ['2d-ad'] or ['v023x'] or ['2d-ad-t'] or ['v024x'] or ['2d-lz'] or ['v027x']:
+    elif(argsp_v == ['2d-ad'] or argsp_v == ['v023x'] or 
+        argsp_v == ['2d-ad-t'] or argsp_v == ['v024x'] or
+        argsp_v == ['2d-lz'] or argsp_v == ['v027x']):
         print("CRIANDO ENTRADA V023X OU V024X OU V027X!")
         NEW_DATA_DICTIONARY[id] = fun_return
-    elif  argsp_v == ['2d-ad-f'] or ['v025x'] or ['2d-ad-ft'] or ['v026x']:
+    elif(argsp_v == ['2d-ad-f'] or argsp_v == ['v025x'] or
+        argsp_v == ['2d-ad-ft'] or argsp_v == ['v026x']):
         print("CRIANDO ENTRADA V025X OU V026X!")
         NEW_DATA_DICTIONARY[id] = (fun_return, fun_name)
 
 
 # Aqui misturam as versões v0.2.1.x a v0.2.7.x
 def salvarNovosDadosBanco(argsp_v):
-    if argsp_v == ['1d-ow'] or['v021x'] or ['1d-ad'] or ['v022x']:
+    if(argsp_v == ['1d-ow'] or argsp_v == ['v021x'] or
+        argsp_v == ['1d-ad'] or argsp_v == ['v022x']):
         print("SALVANDO DADOS V021X OU V022X!")
         print("DATA_DICTIONARY:", DATA_DICTIONARY)
         for id in DATA_DICTIONARY:
@@ -290,8 +296,11 @@ def salvarNovosDadosBanco(argsp_v):
             debug("inserting reference in database")
             _save(_get_file_name(id))
     
-    elif argsp_v == ['2d-ad'] or ['v023x'] or ['2d-ad-t'] or ['v024x'] or ['2d-lz'] or ['v027x']:
+    elif(argsp_v == ['2d-ad'] or argsp_v == ['v023x'] or
+        argsp_v == ['2d-ad-t'] or argsp_v == ['v024x'] or
+        argsp_v == ['2d-lz'] or argsp_v == ['v027x']):
         print("SALVANDO DADOS V023X OU V024X OU V027X!")
+        print("NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
         for id in NEW_DATA_DICTIONARY:
             debug("serializing return value from {0}".format(id))
             _serialize(NEW_DATA_DICTIONARY[id], id)
@@ -299,7 +308,8 @@ def salvarNovosDadosBanco(argsp_v):
             debug("inserting reference in database")
             _save(_get_file_name(id))
     
-    elif  argsp_v == ['2d-ad-f'] or ['v025x'] or ['2d-ad-ft'] or ['v026x']:
+    elif(argsp_v == ['2d-ad-f'] or argsp_v == ['v025x'] or
+        argsp_v == ['2d-ad-ft'] or argsp_v == ['v026x']):
         print("SALVANDO DADOS V025X OU V026X!")
         for id in NEW_DATA_DICTIONARY:
             debug("serializing return value from {0}".format(id))
@@ -325,6 +335,7 @@ if(g_argsp_v == ['1d-ad'] or g_argsp_v == ['v022x']
             else:
                 DATA_DICTIONARY[ipcache_file] = result
     _populate_cached_data_dictionary()
+    print("DATA_DICTIONARY:", DATA_DICTIONARY)
 elif(g_argsp_v == ['2d-ad-t'] or g_argsp_v == ['v024x']):
     print("POPULANDO BANCO VIA THREAD! V024X!")
     def _populate_cached_data_dictionary():
@@ -343,3 +354,6 @@ elif(g_argsp_v == ['2d-ad-t'] or g_argsp_v == ['v024x']):
 
     load_cached_data_dictionary_thread = threading.Thread(target=_populate_cached_data_dictionary)
     load_cached_data_dictionary_thread.start()
+
+
+    print("DATA_DICTIONARY:", DATA_DICTIONARY)

@@ -60,7 +60,6 @@ def _autofix(id):
 
 
 def _deserialize(id):
-    print("deserialize")
     try:
         with open(".intpy/cache/{0}".format(_get_file_name(id)), 'rb') as file:
             return pickle.load(file)
@@ -94,16 +93,18 @@ def _get_cache_data_v021x(id):
     if(id in DATA_DICTIONARY):
         return DATA_DICTIONARY[id]
     list_file_name = _get(_get_file_name(id))
+    print(list_file_name)
     return _deserialize(id) if len(list_file_name) == 1 else None
 
 
 def _get_cache_data_v022x(id):
     print("RECUPERANDO ENTRADA V022X!")
-
     #Nesta versão, DATA_DICTIONARY armazena os dados novos ainda não
     #persistidos no banco de dados e os dados já persitidos no banco de dados
     if(id in DATA_DICTIONARY):
+        print("CACHE HIT")
         return DATA_DICTIONARY[id]
+    print("CACHE MISS")
     return None
 
 
@@ -211,28 +212,28 @@ def get_cache_data(fun_name, fun_args, fun_source, argsp_v):
 
     id = _get_id(fun_name, fun_args, fun_source)
 
-    if argsp_v == ['v01x']:
+    if(argsp_v == ['v01x']):
         ret_get_cache_data_v01x = _get_cache_data_v01x(id)
         return ret_get_cache_data_v01x
-    elif argsp_v == ['1d-ow'] or ['v021x']:
+    elif(argsp_v == ['1d-ow'] or argsp_v == ['v021x']):
         ret_get_cache_data_v021x = _get_cache_data_v021x(id)
         return ret_get_cache_data_v021x
-    elif argsp_v == ['1d-ad'] or ['v022x']:
+    elif(argsp_v == ['1d-ad'] or argsp_v == ['v022x']):
         ret_get_cache_data_v022x = _get_cache_data_v022x(id)
         return ret_get_cache_data_v022x
-    elif argsp_v == ['2d-ad'] or ['v023x']:
+    elif(argsp_v == ['2d-ad'] or argsp_v == ['v023x']):
         ret_get_cache_data_v023x = _get_cache_data_v023x(id)
         return ret_get_cache_data_v023x
-    elif argsp_v == ['2d-ad-t'] or ['v024x']:
+    elif(argsp_v == ['2d-ad-t'] or argsp_v == ['v024x']):
         ret_get_cache_data_v024x = _get_cache_data_v024x(id)
         return ret_get_cache_data_v024x
-    elif argsp_v == ['2d-ad-f'] or ['v025x']:
+    elif(argsp_v == ['2d-ad-f'] or argsp_v == ['v025x']):
         ret_get_cache_data_v025x = _get_cache_data_v025x(id, fun_name)
         return ret_get_cache_data_v025x
-    elif argsp_v == ['2d-ad-ft'] or ['v026x']:
+    elif(argsp_v == ['2d-ad-ft'] or argsp_v == ['v026x']):
         ret_get_cache_data_v026x = _get_cache_data_v026x(id, fun_name)
         return ret_get_cache_data_v026x
-    elif argsp_v == ['2d-lz'] or ['v027x']:
+    elif(argsp_v == ['2d-lz'] or argsp_v == ['v027x']):
         ret_get_cache_data_v027x = _get_cache_data_v027x(id)
         return ret_get_cache_data_v027x
 
@@ -281,6 +282,7 @@ def create_entry(fun_name, fun_args, fun_return, fun_source, argsp_v):
 def salvarNovosDadosBanco(argsp_v):
     if argsp_v == ['1d-ow'] or['v021x'] or ['1d-ad'] or ['v022x']:
         print("SALVANDO DADOS V021X OU V022X!")
+        print("DATA_DICTIONARY:", DATA_DICTIONARY)
         for id in DATA_DICTIONARY:
             debug("serializing return value from {0}".format(id))
             _serialize(DATA_DICTIONARY[id], id)

@@ -8,7 +8,7 @@ def main():
     o = sys.argv[1]
     f = open(o, "r")
     data = []
-    for x in f.readlines()[1::2]:
+    for x in f.readlines()[3::4]:
     #for x in f.read().splitlines()[1::2]:
     #for i in range(0, len(f1)):
         data.append(float(x))

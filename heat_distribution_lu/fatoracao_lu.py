@@ -33,6 +33,7 @@ def fatoracao_lu(A):
 
     return (L, U)
 
+@deterministic
 def resolve_lu(A, B):
     n = len(A)
     L, U = fatoracao_lu(A)

@@ -5,7 +5,7 @@ from model import Model
 #pythonic mode:
 #import sys
 #sys.path.insert(0, '/home/clayton/Dt/codes/intpy_dev/')
-#4Lnx mode: export PYTHONPATH='/home/clayton/Dt/codes/IntPy-experiments-master_EScience_2019/'
+#4Lnx mode: export PYTHONPATH='/home/clayton/Dt/codes/intpy_dev/'
 #4Win mode: SET PYTHONPATH='path/to/directory'
 #echo $PYTHONPATH
 

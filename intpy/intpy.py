@@ -59,10 +59,6 @@ else:
 
     def _get_cache(func, args):
         fun_source = get_source_code_executed(func, g_user_script_graph)
-        
-        print("RECUPERANDO CACHE:")
-        print(fun_source)
-        
         return get_cache_data(func.__name__, args, fun_source, g_argsp_v)
 
 
@@ -75,11 +71,6 @@ else:
         start = time.perf_counter()
         fun_source = get_source_code_executed(func, g_user_script_graph)
         create_entry(func.__name__, fun_args, fun_return, fun_source, g_argsp_v)
-
-        print("CRIANDO ENTRADA:")
-        print(fun_source)
-
-
         end = time.perf_counter()
         debug("caching {0} took {1}".format(func.__name__, end - start))
 

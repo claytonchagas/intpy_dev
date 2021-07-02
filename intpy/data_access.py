@@ -22,13 +22,13 @@ CACHED_DATA_DICTIONARY_SEMAPHORE = threading.Semaphore()
 
 
 def _save(fun_hash, fun_return):
-    CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT OR IGNORE INTO CACHE(fun_hash, fun_return) VALUES ('{0}', \"{1}\")".format(fun_hash, fun_return))
+    CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT OR IGNORE INTO CACHE(fun_hash, fun_return) VALUES (?, ?)", (fun_hash, str(fun_return)))
 
 
 #Versão desenvolvida por causa do _save em salvarNovosDadosBanco para a v0.2.5.x e a v0.2.6.x, com o nome da função
 #Testar se existe a sobrecarga
 def _save_fun_name(fun_hash, fun_return, fun_name):
-    CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT OR IGNORE INTO CACHE(fun_hash, fun_return, fun_name) VALUES ('{0}', \"{1}\", '{2}')".format(fun_hash, fun_return, fun_name))
+    CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT OR IGNORE INTO CACHE(fun_hash, fun_return, fun_name) VALUES (?, ?, ?)", (fun_hash, str(fun_return), fun_name))
 
 
 def _get(id):

@@ -33,7 +33,7 @@ def _create_table():
     stmt = "CREATE TABLE IF NOT EXISTS CACHE (\
     id INTEGER PRIMARY KEY AUTOINCREMENT,\
     fun_hash TEXT UNIQUE NOT NULL,\
-    fun_return BLOB NOT NULL,\
+    fun_return TEXT NOT NULL,\
     fun_name TEXT\
     );"
     conexaoBanco.executarComandoSQLSemRetorno(stmt)

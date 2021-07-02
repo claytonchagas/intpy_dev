@@ -5,8 +5,8 @@ class Banco():
 		self.conexao = sqlite3.connect(nomeBanco)
 		self.cursor = self.conexao.cursor()
 
-	def executarComandoSQLSemRetorno(self, sql):
-		self.cursor.execute(sql)
+	def executarComandoSQLSemRetorno(self, sql, arguments=()):
+		self.cursor.execute(sql, arguments)
 
 	def executarComandoSQLSelect(self, sql):
 		self.cursor.execute(sql)

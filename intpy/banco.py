@@ -8,8 +8,8 @@ class Banco():
 	def executarComandoSQLSemRetorno(self, sql, arguments=()):
 		self.cursor.execute(sql, arguments)
 
-	def executarComandoSQLSelect(self, sql):
-		self.cursor.execute(sql)
+	def executarComandoSQLSelect(self, sql, arguments=()):
+		self.cursor.execute(sql, arguments)
 		return self.cursor.fetchall()
 
 	def salvarAlteracoes(self):

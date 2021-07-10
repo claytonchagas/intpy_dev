@@ -32,12 +32,12 @@ def _save_fun_name(fun_hash, fun_return, fun_name):
 
 
 def _get(id):
-    return CONEXAO_BANCO.executarComandoSQLSelect("SELECT fun_return FROM CACHE WHERE fun_hash = '{0}'".format(id))
+    return CONEXAO_BANCO.executarComandoSQLSelect("SELECT fun_return FROM CACHE WHERE fun_hash = ?", (id,))
 
 
 #Versão desenvolvida por causa do _get_fun_name, que diferente do _get, recebe o nome da função ao invés do id, serve para a v0.2.5.x e a v0.2.6.x, que tem o nome da função
 def _get_fun_name(fun_name):
-    return CONEXAO_BANCO.executarComandoSQLSelect("SELECT fun_hash, fun_return FROM CACHE WHERE fun_name = '{0}'".format(fun_name))
+    return CONEXAO_BANCO.executarComandoSQLSelect("SELECT fun_hash, fun_return FROM CACHE WHERE fun_name = ?", (fun_name,))
 
 
 def _get_id(fun_args, fun_source):

@@ -94,9 +94,6 @@ def _get_cache_data_v01x(id):
 def _get_cache_data_v021x(id):
     #Nesta versão, DATA_DICTIONARY armazena os dados novos ainda não
     #persistidos no sistema de arquivos
-
-    print("v021x DATA_DICTIONARY:", DATA_DICTIONARY)
-
     if(id in DATA_DICTIONARY):
         return DATA_DICTIONARY[id]
     return _get(id)
@@ -106,20 +103,12 @@ def _get_cache_data_v022x(id):
     #Nesta versão, DATA_DICTIONARY armazena os dados novos ainda não
     #persistidos no sistema de arquivos e os dados já persitidos no
     #sistema de arquivos
-
-    print("v022x DATA_DICTIONARY:", DATA_DICTIONARY)
-
     if(id in DATA_DICTIONARY):
         return DATA_DICTIONARY[id]
     return None
 
 
 def _get_cache_data_v023x(id):
-
-    print("v023x DATA_DICTIONARY:", DATA_DICTIONARY)
-    print("v023x NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
-
-
     if(id in DATA_DICTIONARY):
         return DATA_DICTIONARY[id]    
     if(id in NEW_DATA_DICTIONARY):
@@ -128,10 +117,6 @@ def _get_cache_data_v023x(id):
 
 
 def _get_cache_data_v024x(id):
-
-    print("v024x DATA_DICTIONARY:", DATA_DICTIONARY)
-    print("v024x NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
-
     with CACHED_DATA_DICTIONARY_SEMAPHORE:
         if(id in DATA_DICTIONARY):
             return DATA_DICTIONARY[id]
@@ -141,11 +126,6 @@ def _get_cache_data_v024x(id):
 
 
 def _get_cache_data_v025x(id, fun_name):
-
-    print("v025x DATA_DICTIONARY:", DATA_DICTIONARY)
-    print("v025x NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
-    print("v025x FUNCTIONS_ALREADY_SELECTED_FROM_CACHE:", FUNCTIONS_ALREADY_SELECTED_FROM_CACHE)
-
     if(fun_name in FUNCTIONS_ALREADY_SELECTED_FROM_CACHE):
         if(id in DATA_DICTIONARY):
             return DATA_DICTIONARY[id]
@@ -155,28 +135,14 @@ def _get_cache_data_v025x(id, fun_name):
             return NEW_DATA_DICTIONARY[id][0]
     else:
         deserialized_data = _get_fun_name(fun_name)
-        print("deserialized_data: ", deserialized_data)
         DATA_DICTIONARY.update(deserialized_data)
         FUNCTIONS_ALREADY_SELECTED_FROM_CACHE.append(fun_name)
-
-        print("V025x BRINGING NEW DATA FROM THE CACHE")
-        print("v025x DATA_DICTIONARY:", DATA_DICTIONARY)
-        print("v025x NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
-        print("v025x FUNCTIONS_ALREADY_SELECTED_FROM_CACHE:", FUNCTIONS_ALREADY_SELECTED_FROM_CACHE)
-
-
         if(id in DATA_DICTIONARY):
             return DATA_DICTIONARY[id]
     return None
 
 
 def _get_cache_data_v026x(id, fun_name):
-
-    print("v026x DATA_DICTIONARY:", DATA_DICTIONARY)
-    print("v026x NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
-    print("v026x FUNCTIONS_ALREADY_SELECTED_FROM_CACHE:", FUNCTIONS_ALREADY_SELECTED_FROM_CACHE)
-
-
     if(fun_name in FUNCTIONS_ALREADY_SELECTED_FROM_CACHE):
         with CACHED_DATA_DICTIONARY_SEMAPHORE:
             if(id in DATA_DICTIONARY):
@@ -186,12 +152,7 @@ def _get_cache_data_v026x(id, fun_name):
             #(retorno_da_funcao, nome_da_funcao)
             return NEW_DATA_DICTIONARY[id][0]
     else:
-        FUNCTIONS_ALREADY_SELECTED_FROM_CACHE.append(fun_name)
-        
-        print("V06x BRINGING NEW DATA FROM THE CACHE")
-        print("v026x NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
-        print("v026x FUNCTIONS_ALREADY_SELECTED_FROM_CACHE:", FUNCTIONS_ALREADY_SELECTED_FROM_CACHE)
-        
+        FUNCTIONS_ALREADY_SELECTED_FROM_CACHE.append(fun_name)   
         thread = threading.Thread(target=add_new_data_to_CACHED_DATA_DICTIONARY, args=(fun_name,))
         thread.start()
         return _deserialize_fun_name_id(fun_name, id)
@@ -200,10 +161,6 @@ def _get_cache_data_v026x(id, fun_name):
 
 #Comparável à versão v021x, mas com 2 dicionários
 def _get_cache_data_v027x(id):
-    print("v027x DATA_DICTIONARY:", DATA_DICTIONARY)
-    print("v027x NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
-
-
     if(id in DATA_DICTIONARY):
         return DATA_DICTIONARY[id]
     if(id in NEW_DATA_DICTIONARY):
@@ -212,12 +169,6 @@ def _get_cache_data_v027x(id):
     result = _get(id)
     if(result is not None):
         DATA_DICTIONARY[id] = result
-
-    print("BRINGING NEW DATA FROM THE CACHE")
-    print("v027x DATA_DICTIONARY:", DATA_DICTIONARY)
-    print("v027x NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
-
-
     return result
 
 
@@ -256,9 +207,7 @@ def add_new_data_to_CACHED_DATA_DICTIONARY(fun_name):
     with CACHED_DATA_DICTIONARY_SEMAPHORE:
         DATA_DICTIONARY.update(deserialized_data)
     
-    print("v026x DATA_DICTIONARY ATUALIZADO:", DATA_DICTIONARY)
-
-
+ 
 # Aqui misturam as versões v0.2.1.x a v0.2.7.x e v01x
 def create_entry(fun_name, fun_args, fun_return, fun_source, argsp_v):
     id = _get_id(fun_args, fun_source)
@@ -268,29 +217,19 @@ def create_entry(fun_name, fun_args, fun_return, fun_source, argsp_v):
     elif(argsp_v == ['1d-ow'] or argsp_v == ['v021x'] or
         argsp_v == ['1d-ad'] or argsp_v == ['v022x']):
         DATA_DICTIONARY[id] = fun_return
-
-        print("v021x/v022x DATA_DICTIONARY:", DATA_DICTIONARY)
     elif(argsp_v == ['2d-ad'] or argsp_v == ['v023x'] or 
         argsp_v == ['2d-ad-t'] or argsp_v == ['v024x'] or
         argsp_v == ['2d-lz'] or argsp_v == ['v027x']):
         NEW_DATA_DICTIONARY[id] = fun_return
-
-        print("v023x/v024x/v027x NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
     elif(argsp_v == ['2d-ad-f'] or argsp_v == ['v025x'] or
         argsp_v == ['2d-ad-ft'] or argsp_v == ['v026x']):
         NEW_DATA_DICTIONARY[id] = (fun_return, fun_name)
-
-        print("v025x/v026x NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
 
 
 # Aqui misturam as versões v0.2.1.x a v0.2.7.x
 def salvarNovosDadosBanco(argsp_v):
     if(argsp_v == ['1d-ow'] or argsp_v == ['v021x'] or
         argsp_v == ['1d-ad'] or argsp_v == ['v022x']):
-
-        print("v021x/v022x DATA_DICTIONARY:", DATA_DICTIONARY)
-
-
         for id in DATA_DICTIONARY:
             debug("serializing return value from {0}".format(id))
             _save(DATA_DICTIONARY[id], id)
@@ -298,21 +237,12 @@ def salvarNovosDadosBanco(argsp_v):
     elif(argsp_v == ['2d-ad'] or argsp_v == ['v023x'] or
         argsp_v == ['2d-ad-t'] or argsp_v == ['v024x'] or
         argsp_v == ['2d-lz'] or argsp_v == ['v027x']):
-
-
-        print("v023x/v024x/v027x NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
-
-
         for id in NEW_DATA_DICTIONARY:
             debug("serializing return value from {0}".format(id))
             _save(NEW_DATA_DICTIONARY[id], id)
     
     elif(argsp_v == ['2d-ad-f'] or argsp_v == ['v025x'] or
         argsp_v == ['2d-ad-ft'] or argsp_v == ['v026x']):
-
-        
-        print("v025x/v026x NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
-
         for id in NEW_DATA_DICTIONARY:
             debug("serializing return value from {0}".format(id))
             _save_fun_name(NEW_DATA_DICTIONARY[id][0], NEW_DATA_DICTIONARY[id][1], id)
@@ -328,9 +258,6 @@ if(g_argsp_v == ['1d-ad'] or g_argsp_v == ['v022x']
                 continue
             else:
                 DATA_DICTIONARY[element] = result
-        
-        print("v022x/v023x DATA_DICTIONARY:", DATA_DICTIONARY)
-
     _populate_cached_data_dictionary()
 elif(g_argsp_v == ['2d-ad-t'] or g_argsp_v == ['v024x']):
     def _populate_cached_data_dictionary():
@@ -342,8 +269,5 @@ elif(g_argsp_v == ['2d-ad-t'] or g_argsp_v == ['v024x']):
             else:
                 with CACHED_DATA_DICTIONARY_SEMAPHORE:
                     DATA_DICTIONARY[element] = result
-        
-        print("v024x DATA_DICTIONARY ATUALIZADO:", DATA_DICTIONARY)
-
     load_cached_data_dictionary_thread = threading.Thread(target=_populate_cached_data_dictionary)
     load_cached_data_dictionary_thread.start()

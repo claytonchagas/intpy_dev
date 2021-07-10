@@ -55,11 +55,23 @@ def _deserialize(id):
 
 def _deserialize_fun_name(fun_name):
     deserialized_data = {}
-    for element in os.listdir(".intpy/{0}".format(fun_name)):
-        if(os.path.isfile(element)):
-            with open(".intpy/{0}/{1}".format(fun_name, _get_file_name(element)), 'rb') as file:
-                deserialized_data[element] = pickle.load(file)
+    folder_path = ".intpy/{0}".format(fun_name)
+    if(not os.path.exists(folder_path)):
+        return deserialized_data
+    for element in os.listdir(folder_path):
+        element_path = ".intpy/{0}/{1}".format(fun_name, element)
+        if(os.path.isfile(element_path)):
+            with open(element_path, 'rb') as file:
+                deserialized_data[element.replace(".ipcache", "")] = pickle.load(file)
     return deserialized_data
+
+
+def _deserialize_fun_name_id(fun_name, id):
+    try:
+        with open(".intpy/{0}/{1}".format(fun_name, _get_file_name(id)), 'rb') as file:
+            return pickle.load(file)
+    except FileNotFoundError as e:
+        return None
 
 
 def _serialize(return_value, file_name):
@@ -68,6 +80,9 @@ def _serialize(return_value, file_name):
 
 
 def _serialize_fun_name(return_value, fun_name, file_name):
+    folder_path = ".intpy/{0}".format(fun_name)
+    if(not os.path.exists(folder_path)):
+        os.mkdir(folder_path)
     with open(".intpy/{0}/{1}".format(fun_name, _get_file_name(file_name)), 'wb') as file:
         return pickle.dump(return_value, file, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -140,6 +155,7 @@ def _get_cache_data_v025x(id, fun_name):
             return NEW_DATA_DICTIONARY[id][0]
     else:
         deserialized_data = _get_fun_name(fun_name)
+        print("deserialized_data: ", deserialized_data)
         DATA_DICTIONARY.update(deserialized_data)
         FUNCTIONS_ALREADY_SELECTED_FROM_CACHE.append(fun_name)
 
@@ -173,12 +189,12 @@ def _get_cache_data_v026x(id, fun_name):
         FUNCTIONS_ALREADY_SELECTED_FROM_CACHE.append(fun_name)
         
         print("V06x BRINGING NEW DATA FROM THE CACHE")
-        print("v025x NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
-        print("v025x FUNCTIONS_ALREADY_SELECTED_FROM_CACHE:", FUNCTIONS_ALREADY_SELECTED_FROM_CACHE)
+        print("v026x NEW_DATA_DICTIONARY:", NEW_DATA_DICTIONARY)
+        print("v026x FUNCTIONS_ALREADY_SELECTED_FROM_CACHE:", FUNCTIONS_ALREADY_SELECTED_FROM_CACHE)
         
         thread = threading.Thread(target=add_new_data_to_CACHED_DATA_DICTIONARY, args=(fun_name,))
         thread.start()
-        return _get(id)
+        return _deserialize_fun_name_id(fun_name, id)
     return None
 
 
@@ -240,7 +256,7 @@ def add_new_data_to_CACHED_DATA_DICTIONARY(fun_name):
     with CACHED_DATA_DICTIONARY_SEMAPHORE:
         DATA_DICTIONARY.update(deserialized_data)
     
-    print("v027x DATA_DICTIONARY ATUALIZADO:", DATA_DICTIONARY)
+    print("v026x DATA_DICTIONARY ATUALIZADO:", DATA_DICTIONARY)
 
 
 # Aqui misturam as versões v0.2.1.x a v0.2.7.x e v01x

@@ -14,6 +14,10 @@ print(g_argsp_v)
 
 print(g_argsp_no_cache)
 
+if(g_argsp_v == ['2d-ad-ft'] or g_argsp_v == ['v026x']):
+    print("Error: This version of IntPy is not implemented. Try again with another version!")
+    sys.exit()
+
 if g_argsp_v == None and not g_argsp_no_cache:
     print("Error: enter the \"-h\" parameter on the command line after \"python script.py\" to see usage instructions")
     sys.exit()
@@ -59,7 +63,7 @@ else:
 
     def _get_cache(func, args):
         fun_source = get_source_code_executed(func, g_user_script_graph)
-        return get_cache_data(func.__name__, args, fun_source, g_argsp_v)
+        return get_cache_data(func.__qualname__, args, fun_source, g_argsp_v)
 
 
     def _cache_exists(cache):
@@ -70,7 +74,7 @@ else:
         debug("starting caching data for {0}({1})".format(func.__name__, fun_args))
         start = time.perf_counter()
         fun_source = get_source_code_executed(func, g_user_script_graph)
-        create_entry(func.__name__, fun_args, fun_return, fun_source, g_argsp_v)
+        create_entry(func.__qualname__, fun_args, fun_return, fun_source, g_argsp_v)
         end = time.perf_counter()
         debug("caching {0} took {1}".format(func.__name__, end - start))
 

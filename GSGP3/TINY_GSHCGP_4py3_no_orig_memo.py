@@ -1,4 +1,3 @@
-
 '''
 
 TINY_GSHCGP.py: An Implementation of Geometric Semantic ***Hill Climber*** Genetic Programming Using Higher-Order Functions and Memoization
@@ -67,7 +66,8 @@ def randexpr(dep):
 def randfunct():
     'Create a random Boolean function. Individuals are represented _directly_ as Python functions.'
     re = randexpr(DEPTH)
-    rf = eval('lambda ' + ', '.join(vars) + ': ' + re) # create function of n input variables
+    a = ', '
+    rf = eval('lambda ' + a.join(vars) + ': ' + re) # create function of n input variables
     #rf = memoize(rf) # add cache to the function
     rf.geno = lambda: re # store genotype
     return rf
@@ -89,8 +89,10 @@ def fitness(individual):
 #@deterministic
 def mutation(p):
     'The mutation operator is a higher order function. The parent function is called by the offspring function.'
-    mintermexpr = ' and '.join([random.choice([x,'not ' + x]) for x in vars]) # random minterm expression of n variables
-    minterm = eval('lambda ' + ', '.join(vars) + ': ' + mintermexpr) # turn minterm into a function
+    a = ' and '
+    mintermexpr = a.join([random.choice([x,'not ' + x]) for x in vars]) # random minterm expression of n variables
+    b = ', '
+    minterm = eval('lambda ' + b.join(vars) + ': ' + mintermexpr) # turn minterm into a function
     if random.random()<0.5:
         offspring = lambda *x: p(*x) or minterm(*x)
         #offspring = memoize(offspring) # add cache

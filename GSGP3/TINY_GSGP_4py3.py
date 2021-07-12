@@ -73,11 +73,12 @@ def randfunct():
     return rf
 
 
+@deterministic
 def targetfunct(*args):
     'Parity function of any number of input variables'
     return args.count(True) % 2 == 1
 
-#@deterministic
+
 def fitness(individual):
     'Determine the fitness (error) of an individual. Lower is better.'
     fit = 0
@@ -87,7 +88,7 @@ def fitness(individual):
             fit = fit + 1
     return fit
 
-#@deterministic
+
 def crossover(p1,p2):
     """
     The crossover operator is a higher order function that takes parent functions and return an offspring function.
@@ -100,7 +101,7 @@ def crossover(p1,p2):
     offspring.geno = lambda: '(('+ p1.geno() + ' and ' + mask.geno() + ') or (' + p2.geno() + ' and not ' + mask.geno() + '))' # to reconstruct genotype
     return offspring
 
-#@deterministic
+
 def mutation(p):
     'The mutation operator is a higher order function. The parent function is called by the offspring function.'
     mintermexpr = ' and '.join([random.choice([x,'not ' + x]) for x in vars]) # random minterm expression of n variables

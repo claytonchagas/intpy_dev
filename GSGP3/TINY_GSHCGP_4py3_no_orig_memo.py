@@ -38,7 +38,7 @@ NUMVARS = 5 # number of input variables
 DEPTH = 4 # maximum depth of expressions in the initial population
 #DEPTH = 6 # maximum depth of expressions in the initial population
 #GENERATIONS = 400 # number of generations
-GENERATIONS = 400 # number of generations
+GENERATIONS = 1000 # number of generations
 
 ####################
 
@@ -86,7 +86,7 @@ def fitness(individual):
             fit = fit + 1
     return fit
 
-#@deterministic
+@deterministic
 def mutation(p):
     'The mutation operator is a higher order function. The parent function is called by the offspring function.'
     mintermexpr = ' and '.join([random.choice([x,'not ' + x]) for x in vars]) # random minterm expression of n variables

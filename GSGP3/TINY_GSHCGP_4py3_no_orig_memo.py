@@ -38,7 +38,7 @@ NUMVARS = 5 # number of input variables
 DEPTH = 4 # maximum depth of expressions in the initial population
 #DEPTH = 6 # maximum depth of expressions in the initial population
 #GENERATIONS = 400 # number of generations
-GENERATIONS = 1000 # number of generations
+GENERATIONS = 400 # number of generations
 
 ####################
 

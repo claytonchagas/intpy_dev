@@ -22,30 +22,30 @@ CACHED_DATA_DICTIONARY_SEMAPHORE = threading.Semaphore()
 
 
 def _save(file_name):
-    CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT OR IGNORE INTO CACHE(cache_file) VALUES ('{0}')".format(file_name))
+    CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT OR IGNORE INTO CACHE(cache_file) VALUES (?)", (file_name,))
 
 
 #Versão desenvolvida por causa do _save em salvarNovosDadosBanco para a v0.2.5.x e a v0.2.6.x, com o nome da função
 #Testar se existe a sobrecarga
 def _save_fun_name(file_name, fun_name):
-    CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT OR IGNORE INTO CACHE(cache_file, fun_name) VALUES ('{0}', '{1}')".format(file_name, fun_name))
+    CONEXAO_BANCO.executarComandoSQLSemRetorno("INSERT OR IGNORE INTO CACHE(cache_file, fun_name) VALUES (?, ?)", (file_name, fun_name))
 
 
 def _get(id):
-    return CONEXAO_BANCO.executarComandoSQLSelect("SELECT cache_file FROM CACHE WHERE cache_file = '{0}'".format(id))
+    return CONEXAO_BANCO.executarComandoSQLSelect("SELECT cache_file FROM CACHE WHERE cache_file = ?", (id,))
 
 
 #Versão desenvolvida por causa do _get_fun_name, que diferente do _get, recebe o nome da função ao invés do id, serve para a v0.2.5.x e a v0.2.6.x, que tem o nome da função
 def _get_fun_name(fun_name):
-    return CONEXAO_BANCO.executarComandoSQLSelect("SELECT cache_file FROM CACHE WHERE fun_name = '{0}'".format(fun_name))
+    return CONEXAO_BANCO.executarComandoSQLSelect("SELECT cache_file FROM CACHE WHERE fun_name = ?", (fun_name,))
 
 
 def _remove(id):
-    CONEXAO_BANCO.executarComandoSQLSemRetorno("DELETE FROM CACHE WHERE cache_file = '{0}';".format(id))
+    CONEXAO_BANCO.executarComandoSQLSemRetorno("DELETE FROM CACHE WHERE cache_file = ?;", (id,))
 
 
-def _get_id(fun_name, fun_args, fun_source):
-    return hashlib.md5((fun_name + str(fun_args) + fun_source).encode('utf')).hexdigest()
+def _get_id(fun_args, fun_source):
+    return hashlib.md5((str(fun_args) + fun_source).encode('utf')).hexdigest()
 
 
 def _get_file_name(id):
@@ -184,7 +184,7 @@ def _get_cache_data_v027x(id):
 
 # Aqui misturam as versões v0.2.1.x a v0.2.7.x e v01x
 def get_cache_data(fun_name, fun_args, fun_source, argsp_v):
-    id = _get_id(fun_name, fun_args, fun_source)
+    id = _get_id(fun_args, fun_source)
 
     if(argsp_v == ['v01x']):
         ret_get_cache_data_v01x = _get_cache_data_v01x(id)
@@ -226,7 +226,7 @@ def add_new_data_to_CACHED_DATA_DICTIONARY(list_file_names):
 
 # Aqui misturam as versões v0.2.1.x a v0.2.7.x e v01x
 def create_entry(fun_name, fun_args, fun_return, fun_source, argsp_v):
-    id = _get_id(fun_name, fun_args, fun_source)
+    id = _get_id(fun_args, fun_source)
     if argsp_v == ['v01x']:
         global CONEXAO_BANCO
         CONEXAO_BANCO = Banco(os.path.join(".intpy", "intpy.db"))

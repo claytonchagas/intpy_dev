@@ -48,7 +48,9 @@ def complement(seq):
 def reverse_complement(seq):
     seq = list(seq)
     seq.reverse()
-    return ''.join(complement(seq))
+    aspas = ''
+    return aspas.join(complement(seq))
+    #return ''.join(complement(seq))
 
 print('\n********************************************************************************************\n'+
       'Digital_RADs.py\n'+

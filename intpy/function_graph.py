@@ -416,7 +416,11 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
                     return possible_functions_called
                 
                 original_imported_function_name = self.__current_script.get_original_name_of_function_imported_with_import_from(import_command, function_called_name)
-                possible_functions_called[original_imported_function_name] = self.__experiment.scripts[imported_script_name].functions[original_imported_function_name]
+                try:
+                    possible_functions_called[original_imported_function_name] = self.__experiment.scripts[imported_script_name].functions[original_imported_function_name]
+                except:
+                    #In this case the function called is a constructor to a class that was imported to the script
+                    pass
                 
             else:
                 import_command = self.__current_script.get_import_command_of_function(function_called_name)

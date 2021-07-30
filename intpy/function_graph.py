@@ -38,27 +38,28 @@ class Script():
         self.__function_graph = function_graph
 
     
-    def import_command_to_imported_scripts_names(self, import_command):
-        def script_name_to_script_path(script_name):
-            script_path = script_name[0]
-            for i in range(1, len(script_name), 1):
-                letter = script_name[i]
-                if((letter == "." and script_path[-1] != ".") or
-                (letter != "." and script_path[-1] == ".")):
-                    script_path += os.sep + letter
-                else:
-                    script_path += letter
-            script_path += ".py" if script_path[-1] != "." else os.sep + "__init__.py"
-            return os.path.normpath(os.path.join(os.path.dirname(self.__name), script_path))
+    def script_name_to_script_path(self, script_name):
+        script_path = script_name[0]
+        for i in range(1, len(script_name), 1):
+            letter = script_name[i]
+            if((letter == "." and script_path[-1] != ".") or
+            (letter != "." and script_path[-1] == ".")):
+                script_path += os.sep + letter
+            else:
+                script_path += letter
+        script_path += ".py" if script_path[-1] != "." else os.sep + "__init__.py"
+        return os.path.normpath(os.path.join(os.path.dirname(self.__name), script_path))
 
+
+    def import_command_to_imported_scripts_names(self, import_command):
         imported_scripts_names = []
         if(isinstance(import_command, ast.Import)):
             for alias in import_command.names:
-                imported_scripts_names.append(script_name_to_script_path(alias.name))
+                imported_scripts_names.append(self.script_name_to_script_path(alias.name))
 
         elif(isinstance(import_command, ast.ImportFrom)):
             imported_script_name = import_command.level * "." + import_command.module if import_command.module is not None else import_command.level * "."
-            imported_scripts_names.append(script_name_to_script_path(imported_script_name))
+            imported_scripts_names.append(self.script_name_to_script_path(imported_script_name))
             
         return imported_scripts_names
 
@@ -424,13 +425,7 @@ class ExperimentFunctionGraphCreator(ast.NodeVisitor):
 
                 original_imported_script_name = self.__current_script.get_original_name_of_script_imported_with_import(import_command, function_called_name)
 
-                imported_script_name = ""
-                imported_scripts_names = self.__current_script.import_command_to_imported_scripts_names(import_command)
-                for current_imported_script_name in imported_scripts_names:
-                    if(current_imported_script_name[current_imported_script_name.rfind(os.sep) + 1:current_imported_script_name.rfind(".py")] == original_imported_script_name):
-                        imported_script_name = current_imported_script_name
-                        break
-
+                imported_script_name = self.__current_script.script_name_to_script_path(original_imported_script_name)
                 if(not is_an_user_defined_script(imported_script_name, self.__experiment.experiment_base_dir)):
                     return possible_functions_called
                 

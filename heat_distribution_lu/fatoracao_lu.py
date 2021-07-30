@@ -21,14 +21,16 @@ def fatoracao_lu(A):
             soma = 0
             for k in range(i):
                 soma += U[k][j] * L[i][k]
-            dense_a_i = np.array(A[i].todense())
+            a = A[i]
+            dense_a_i = np.array(a.todense())
             U[i][j] = dense_a_i[0][j] - soma
 
         for i in range(j, n):
             soma = 0
             for k in range(j):
                 soma += U[k][j] * L[i][k]
-            dense_a_i = np.array(A[i].todense())
+            a = A[i]
+            dense_a_i = np.array(a.todense())
             L[i][j] = (dense_a_i[0][j] - soma) / U[j][j]
 
     return (L, U)

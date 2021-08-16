@@ -33,14 +33,26 @@ if g_argsp_no_cache:
         return f
 else:
     init_env()
-    from intpy.data_access import get_cache_data, create_entry, salvarNovosDadosBanco
+    import os
+    from intpy.data_access import get_cache_data, create_entry, salvarNovosDadosBanco, close_database_connection
     from intpy.function_graph import create_experiment_function_graph, get_source_code_executed
 
+
     g_user_script_graph = None
+
+
+    def create_child_process():
+        return os.fork()
+    
+
+    def is_child_process(pid):
+        return pid == 0
+
 
     def _initialize_cache(user_script_path):
         global g_user_script_graph
         g_user_script_graph = create_experiment_function_graph(user_script_path)
+
 
     def initialize_intpy(user_script_path):
         def decorator(f):
@@ -48,7 +60,14 @@ else:
                 _initialize_cache(user_script_path)
                 f(*method_args, **method_kwargs)
                 if g_argsp_v != ['v01x']:
-                    _salvarCache()
+                    #pid is the child process pid during the execution of the parent process
+                    #pid is 0 during the execution of the child process
+                    pid = create_child_process()
+                    if is_child_process(pid):
+                        _salvarCache()
+                        exit()
+                    else:
+                        close_database_connection()
             return execution
         return decorator
 
@@ -128,4 +147,6 @@ else:
 
 
     def _salvarCache():
+        time.sleep(10)
         salvarNovosDadosBanco(g_argsp_v)
+        print("DONE")

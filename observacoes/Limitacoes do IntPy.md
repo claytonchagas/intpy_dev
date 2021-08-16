@@ -15,3 +15,8 @@ As seguintes limitações foram identificadas no IntPy:
     Ex.: A função abaixo não deveria ser marcada com o decorador @deterministic
                             def funcao(argumento=1):
                                 return 10
+    
+    4)É importante observar que assim que o processamento do script do usuário se encerra, o IntPy inicializa um processo separado para realizar o salvamento dos dados no cache. Esse processo não pode ser visto pelo usuário, que tem seu terminal liberado para executar outros programas, enquanto esse procedimento ocorre. Assim, surgem as seguintes limitações:
+        i)Caso o usuário desligue o computador logo após o fim do processamento do usuário, é possível que os dados não sejam salvos no cache. Isso impediria que o IntPy acelerasse a execução do experimento da próxima vez que este fosse executado.
+        
+        ii)Caso o usuário execute duas vezes consecutivas o mesmo experimento, é possível que os dados coletados pelo IntPy durante a primeira execução do experimento ainda não tenham sido salvos. Isso faria com que a execução do segundo experimento não fosse acelerada, podendo inclusive demorar mais que o normal, devido a concomitantemente estar sendo executado um outro processo no sistema.

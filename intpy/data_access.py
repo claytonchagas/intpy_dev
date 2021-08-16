@@ -79,7 +79,7 @@ def _get_cache_data_v01x(id):
     global CONEXAO_BANCO
     CONEXAO_BANCO = Banco(os.path.join(".intpy", "intpy.db"))
     list_file_name = _get(_get_file_name(id))
-    CONEXAO_BANCO.fecharConexao()
+    close_database_connection()
     return _deserialize(id) if len(list_file_name) == 1 else None
 
 
@@ -235,7 +235,7 @@ def create_entry(fun_name, fun_args, fun_return, fun_source, argsp_v):
         debug("inserting reference in database")
         _save(_get_file_name(id))
         CONEXAO_BANCO.salvarAlteracoes()
-        CONEXAO_BANCO.fecharConexao()
+        close_database_connection()
 
     elif(argsp_v == ['1d-ow'] or argsp_v == ['v021x'] or
         argsp_v == ['1d-ad'] or argsp_v == ['v022x']):
@@ -277,6 +277,10 @@ def salvarNovosDadosBanco(argsp_v):
             _save_fun_name(_get_file_name(id), NEW_DATA_DICTIONARY[id][1])
 
     CONEXAO_BANCO.salvarAlteracoes()
+    close_database_connection()
+
+
+def close_database_connection():
     CONEXAO_BANCO.fecharConexao()
 
 

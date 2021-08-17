@@ -1,4 +1,3 @@
-import pickle
 import hashlib
 import os
 import threading
@@ -11,7 +10,7 @@ from intpy.logger.log import debug, warn
 
 # Opening database connection and creating select query to the database
 # to populate DATA_DICTIONARY
-g_argsp_v, g_argsp_no_cache = get_params()
+g_argsp_v, g_argsp_no_cache, g_argsp_serialization = get_params()
 CONEXAO_BANCO = None
 if(g_argsp_v != ['v01x']):
     CONEXAO_BANCO = Banco(os.path.join(".intpy", "intpy.db"))
@@ -59,7 +58,27 @@ def _autofix(id):
     debug("environment fixed")
 
 
-def _deserialize(id):
+def _serialize_pickle(return_value, file_name):
+    import pickle
+    with open(".intpy/cache/{0}".format(_get_file_name(file_name)), 'wb') as file:
+        pickle.dump(return_value, file, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def _serialize_jsonpickle(return_value, file_name):
+    import jsonpickle
+    with open(".intpy/cache/{0}".format(_get_file_name(file_name)), 'wt') as file:
+        object_serialized = jsonpickle.encode(return_value)
+        file.write(object_serialized)
+
+
+def _serialize_simplejson(return_value, file_name):
+    import simplejson
+    with open(".intpy/cache/{0}".format(_get_file_name(file_name)), 'wt') as file:
+        simplejson.dump(return_value, file)
+
+
+def _deserialize_pickle(id):
+    import pickle
     try:
         with open(".intpy/cache/{0}".format(_get_file_name(id)), 'rb') as file:
             return pickle.load(file)
@@ -70,9 +89,29 @@ def _deserialize(id):
         return None
 
 
-def _serialize(return_value, file_name):
-    with open(".intpy/cache/{0}".format(_get_file_name(file_name)), 'wb') as file:
-        return pickle.dump(return_value, file, protocol=pickle.HIGHEST_PROTOCOL)
+def _deserialize_jsonpickle(id):
+    import jsonpickle
+    try:
+        with open(".intpy/cache/{0}".format(_get_file_name(id)), 'rt') as file:
+            object_serialized = file.read()
+            return jsonpickle.decode(object_serialized)
+    except FileNotFoundError as e:
+        warn("corrupt environment. Cache reference exists for a function in database but there is no file for it in cache folder.\
+            Have you deleted cache folder?")
+        _autofix(id)
+        return None
+
+
+def _deserialize_simplejson(id):
+    import simplejson
+    try:
+        with open(".intpy/cache/{0}".format(_get_file_name(id)), 'rt') as file:
+            return simplejson.load(file)
+    except FileNotFoundError as e:
+        warn("corrupt environment. Cache reference exists for a function in database but there is no file for it in cache folder.\
+            Have you deleted cache folder?")
+        _autofix(id)
+        return None
 
 
 def _get_cache_data_v01x(id):
@@ -279,6 +318,14 @@ def salvarNovosDadosBanco(argsp_v):
     CONEXAO_BANCO.salvarAlteracoes()
     CONEXAO_BANCO.fecharConexao()
 
+
+g_serialization_functions = {
+    "pickle": [_serialize_pickle, _deserialize_pickle],
+    "jsonpickle": [_serialize_jsonpickle, _deserialize_jsonpickle],
+    "simplejson": [_serialize_simplejson, _deserialize_simplejson]
+}
+
+_serialize, _deserialize = g_serialization_functions[g_argsp_serialization]
 
 if(g_argsp_v == ['1d-ad'] or g_argsp_v == ['v022x']
     or g_argsp_v == ['2d-ad'] or g_argsp_v == ['v023x']):

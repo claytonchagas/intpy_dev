@@ -8,11 +8,11 @@ from intpy.parser_params import get_params
 from intpy.environment import init_env
 from intpy.logger.log import debug
 
-g_argsp_v, g_argsp_no_cache = get_params()
+g_argsp_v, g_argsp_no_cache, g_argsp_serialization = get_params()
 
 print(g_argsp_v)
-
 print(g_argsp_no_cache)
+print(g_argsp_serialization)
 
 if g_argsp_v == None and not g_argsp_no_cache:
     print("Error: enter the \"-h\" parameter on the command line after \"python script.py\" to see usage instructions")

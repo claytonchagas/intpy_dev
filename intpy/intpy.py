@@ -147,6 +147,4 @@ else:
 
 
     def _salvarCache():
-        time.sleep(10)
         salvarNovosDadosBanco(g_argsp_v)
-        print("DONE")
